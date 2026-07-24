@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>ChromaStudio</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="mesh mb1"></div>
+  <div class="mesh mb2"></div>
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="logo">
+      <div class="logo-dot"></div>CHROMA
+    </div>
+    <div class="top-act" onclick="undo()">
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="1 4 1 10 7 10" />
+        <path d="M3.51 15a9 9 0 1 0 .49-4.33" />
+      </svg>Undo
+    </div>
+    <div class="top-act on" onclick="redo()">Redo
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="23 4 23 10 17 10" />
+        <path d="M20.49 15a9 9 0 1 1-.49-4.33" />
+      </svg>
+    </div>
+    <div class="top-sep"></div>
+    <div class="top-nav active" id="mi-wheel" onclick="switchTool('wheel')">Wheel</div>
+    <div class="top-nav" id="mi-colors" onclick="switchTool('colors')">Colors</div>
+    <div class="top-nav" id="mi-shades" onclick="switchTool('shades')">Shades</div>
+    <div class="top-nav" id="mi-gradients" onclick="switchTool('gradients')">Gradients</div>
+    <div class="top-nav" id="mi-preview" onclick="switchTool('preview')">Preview</div>
+    <div class="top-nav" id="mi-contrast" onclick="switchTool('contrast')">Contrast</div>
+    <div class="top-spacer"></div>
+    <button class="btn-rand" onclick="randomize()">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="16 3 21 3 21 8" />
+        <line x1="4" y1="20" x2="21" y2="3" />
+        <polyline points="21 16 21 21 16 21" />
+        <line x1="15" y1="15" x2="21" y2="21" />
+      </svg>
+      Randomize
+    </button>
+    <div id="mob-menu-btn" onclick="openMob()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </div>
+  </div>
+
+  <!-- CONTEXT BAR -->
+  <div id="ctxbar"></div>
+
+  <!-- WORKSPACE -->
+  <div id="workspace">
+    <!-- ICON SIDEBAR -->
+    <div id="iconbar">
+      <button class="ic-btn active" onclick="switchTool('wheel')" data-tool="wheel" data-tip="Color Wheel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="3.5" />
+          <line x1="12" y1="2" x2="12" y2="8.5" />
+          <line x1="12" y1="15.5" x2="12" y2="22" />
+          <line x1="2" y1="12" x2="8.5" y2="12" />
+          <line x1="15.5" y1="12" x2="22" y2="12" />
+        </svg>
+      </button>
+      <button class="ic-btn" onclick="switchTool('colors')" data-tool="colors" data-tip="Colors">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      </button>
+      <button class="ic-btn" onclick="switchTool('shades')" data-tool="shades" data-tip="Shades & Tints">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="2" y="6" width="20" height="12" rx="2" />
+          <line x1="7.3" y1="6" x2="7.3" y2="18" />
+          <line x1="12" y1="6" x2="12" y2="18" />
+          <line x1="16.7" y1="6" x2="16.7" y2="18" />
+        </svg>
+      </button>
+      <button class="ic-btn" onclick="switchTool('gradients')" data-tool="gradients" data-tip="Gradients">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <line x1="7" y1="4" x2="7" y2="20" stroke-opacity=".5" />
+          <line x1="12" y1="4" x2="12" y2="20" stroke-opacity=".3" />
+          <line x1="17" y1="4" x2="17" y2="20" stroke-opacity=".15" />
+        </svg>
+      </button>
+      <div class="ic-sep"></div>
+      <button class="ic-btn" onclick="switchTool('preview')" data-tool="preview" data-tip="UI Preview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      </button>
+      <button class="ic-btn" onclick="switchTool('contrast')" data-tool="contrast" data-tip="Contrast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor" opacity=".4" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- CANVAS -->
+    <div id="canvas-area">
+      <div id="view-container">
+
+        <!-- WHEEL -->
+        <div class="view-panel" id="panel-wheel">
+          <div id="wheel-layout">
+            <div class="wheel-wrap"><canvas id="wheel-canvas" width="320" height="320"></canvas></div>
+            <div id="wheel-side">
+              <div class="wside-title">Palette Colors</div>
+              <div id="wheel-color-list"></div>
+              <div id="wheel-strip" style="margin-top:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLORS -->
+        <div class="view-panel active" id="panel-colors">
+          <div class="sec-hdr">Palette Colors</div>
+          <div class="cards-grid" id="cards-grid"></div>
+        </div>
+
+        <!-- SHADES -->
+        <div class="view-panel" id="panel-shades">
+          <div class="sec-hdr">Shades &amp; Tints</div>
+          <div id="shades-content"></div>
+        </div>
+
+        <!-- GRADIENTS -->
+        <div class="view-panel" id="panel-gradients">
+          <div class="sec-hdr">Generated Gradients</div>
+          <div class="grad-grid" id="grad-grid"></div>
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="view-panel" id="panel-preview">
+          <div class="sec-hdr">UI Previews — click any card to open a fully built website</div>
+          <div class="prev-grid" id="prev-grid"></div>
+        </div>
+
+        <!-- CONTRAST -->
+        <div class="view-panel" id="panel-contrast">
+          <div class="sec-hdr">WCAG Contrast Ratios</div>
+          <div class="contrast-grid" id="contrast-grid"></div>
+        </div>
+
+      </div>
+      <div id="palbar"></div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="rightpanel">
+      <div class="rp-sec">
+        <div class="rp-title">Active Palette</div>
+        <div class="rp-dots" id="rp-dots"></div>
+      </div>
+      <div class="rp-sec">
+        <div class="rp-title">Info</div>
+        <div class="rp-row"><span class="rp-key">Harmony</span><span class="rp-val" id="rp-harmony">—</span></div>
+        <div class="rp-row"><span class="rp-key">Count</span><span class="rp-val" id="rp-count">—</span></div>
+        <div class="rp-row"><span class="rp-key">Base</span><span class="rp-val" id="rp-base">—</span></div>
+      </div>
+      <div class="rp-scroll">
+        <div class="rp-title">Palette History <span class="rp-history-count">20 max</span></div>
+        <div id="palette-history-list" class="palette-history-list"></div>
+        <div class="rp-title">Export</div>
+        <button class="rp-xbtn" onclick="exportCSS()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>CSS Variables</button>
+        <button class="rp-xbtn" onclick="exportHex()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>HEX List</button>
+        <button class="rp-xbtn" onclick="exportJSON()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>JSON</button>
+        <button class="rp-xbtn" onclick="exportTailwind()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>Tailwind</button>
+        <button class="rp-xbtn" onclick="exportSCSS()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            <line x1="9" y1="9" x2="9.01" y2="9" />
+            <line x1="15" y1="9" x2="15.01" y2="9" />
+          </svg>SCSS Vars</button>
+        <button class="rp-xbtn" onclick="exportShadcn()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+          </svg>Shadcn HSL</button>
+        <button class="rp-xbtn" onclick="exportOKLCH()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+          </svg>OKLCH</button>
+        <button class="rp-xbtn" onclick="exportFigmaVariables()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          </svg>Figma JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE DRAWER -->
+  <div id="mob-overlay" onclick="closeMob()"></div>
+  <div id="mob-drawer">
+    <div class="mob-close-row">
+      <span style="font-weight:700;font-size:13px;">Menu</span>
+      <div class="mob-x" onclick="closeMob()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+          stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg></div>
+    </div>
+    <div class="mob-title">Views</div>
+    <div style="display:flex;flex-direction:column;gap:4px;" id="mob-nav"></div>
+    <div class="mob-title">Base Color</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="mob-cpick"
+        class="ctx-cpick"
+        aria-label="Pick base color"
+        title="Pick base color"></button>
+      <input type="text" id="mob-hex" class="ctx-hex" style="flex:1;" maxlength="7" placeholder="#RRGGBB"
+        oninput="onHexInput(this.value)">
+    </div>
+    <div class="mob-title">Count</div>
+    <div class="ctx-stepper" style="width:fit-content;">
+      <button onclick="stepCount(-1)">−</button>
+      <span id="mob-count">5</span>
+      <button onclick="stepCount(1)">+</button>
+    </div>
+    <div class="mob-title">Harmony</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;" id="mob-harmony"></div>
+    <div class="mob-title">Export</div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <button class="rp-xbtn" onclick="exportCSS();closeMob()"><svg viewBox="0 0 24 24" width="11" height="11"
+          fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>CSS Variables</button>
+      <button class="rp-xbtn" onclick="exportHex();closeMob()"><svg viewBox="0 0 24 24" width="11" height="11"
+          fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>HEX List</button>
+      <button class="rp-xbtn" onclick="exportJSON();closeMob()"><svg viewBox="0 0 24 24" width="11" height="11"
+          fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>JSON</button>
+      <button class="rp-xbtn" onclick="exportShadcn();closeMob()"><svg viewBox="0 0 24 24" width="11" height="11"
+          fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+        </svg>Shadcn</button>
+      <button class="rp-xbtn" onclick="exportOKLCH();closeMob()"><svg viewBox="0 0 24 24" width="11" height="11"
+          fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+        </svg>OKLCH</button>
+      <button class="rp-xbtn" onclick="exportFigmaVariables();closeMob()"><svg viewBox="0 0 24 24" width="11" height="11"
+          fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        </svg>Figma</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <svg width="0" height="0" style="position:absolute;pointer-events:none">
+    <defs>
+      <filter id="filter-protanopia" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0.567 0.433 0 0 0 0.558 0.442 0 0 0 0 0.242 0.758 0 0 0 0 0 1 0" />
+      </filter>
+      <filter id="filter-deuteranopia" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0.625 0.375 0 0 0 0.7 0.3 0 0 0 0 0.3 0.7 0 0 0 0 0 1 0" />
+      </filter>
+      <filter id="filter-tritanopia" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0.95 0.05 0 0 0 0.433 0.567 0 0 0 0 0.475 0.525 0 0 0 0 0 1 0" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script src="js/color-picker.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
