@@ -2,6 +2,15 @@
     const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
     let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', colorBlindMode: 'none' };
     let hist = [], histIdx = -1, currentTool = 'colors';
+    const buttonClickSound = new Audio('click.wav');
+    buttonClickSound.preload = 'auto';
+    buttonClickSound.volume = 0.35;
+
+    function playButtonClickSound() {
+      const sound = buttonClickSound.cloneNode();
+      sound.volume = buttonClickSound.volume;
+      sound.play().catch(() => { });
+    }
 
     // ══ COLOR MATH ══
     function hexToHsl(hex) {
@@ -420,264 +429,142 @@
     }
     function copyAllGrads() { copyText(allGradCSS.map(g => `background: ${g};`).join('\n')); }
 
-    // ══ PREVIEW — opens full websites ══
+    // ══ PREVIEW — opens full interactive websites ══
     function buildSite(type, p) {
-      const c1 = p[0], c2 = p[1] || p[0], c3 = p[2] || p[0], c4 = p[3] || p[0];
-      const t1 = textOn(c1), t2 = textOn(c2), t3 = textOn(c3);
-
-      if (type === 'landing') return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Landing — ChromaStudio Preview</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:${c1};color:${t1};}
-nav{display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:rgba(0,0,0,.12);backdrop-filter:blur(14px);position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.07);}
-.logo{font-weight:800;font-size:18px;letter-spacing:-.5px;}
-.links{display:flex;gap:28px;}.links a{text-decoration:none;color:${t1};opacity:.65;font-size:14px;font-weight:500;transition:opacity .2s;}.links a:hover{opacity:1;}
-.cta{padding:9px 22px;background:${c2};color:${t2};border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;font-family:'Inter',sans-serif;}
-.hero{padding:130px 48px 90px;text-align:center;max-width:820px;margin:0 auto;}
-.badge{display:inline-block;padding:6px 16px;background:${c2}22;border:1px solid ${c2}44;border-radius:100px;font-size:12px;font-weight:600;color:${c2};margin-bottom:26px;letter-spacing:.5px;text-transform:uppercase;}
-h1{font-size:clamp(38px,6vw,70px);font-weight:800;line-height:1.07;letter-spacing:-2.5px;margin-bottom:22px;}
-h1 span{color:${c2};}
-.sub{font-size:18px;opacity:.6;line-height:1.7;margin-bottom:40px;max-width:520px;margin-left:auto;margin-right:auto;}
-.btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
-.btn-p{padding:14px 36px;background:${c2};color:${t2};border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:15px;font-family:'Inter',sans-serif;transition:transform .15s,box-shadow .15s;}
-.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 30px ${c2}55;}
-.btn-g{padding:14px 36px;background:transparent;color:${t1};border:1.5px solid rgba(255,255,255,.22);border-radius:10px;font-weight:600;cursor:pointer;font-size:15px;font-family:'Inter',sans-serif;}
-.feats{padding:80px 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1100px;margin:0 auto;}
-.feat{padding:28px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);}
-.feat-ico{width:46px;height:46px;border-radius:10px;background:${c2};display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px;}
-.feat h3{font-size:17px;font-weight:700;margin-bottom:8px;}
-.feat p{font-size:13.5px;opacity:.58;line-height:1.65;}
-.stats{padding:60px 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;max-width:900px;margin:0 auto;text-align:center;}
-.stat h2{font-size:44px;font-weight:800;color:${c2};letter-spacing:-1.5px;}
-.stat p{font-size:13px;opacity:.5;margin-top:5px;font-weight:500;}
-.cta-sec{padding:80px 48px;text-align:center;background:linear-gradient(135deg,${c2}22,${c3}18);}
-.cta-sec h2{font-size:38px;font-weight:800;margin-bottom:14px;letter-spacing:-1px;}
-.cta-sec p{opacity:.58;margin-bottom:30px;font-size:16px;}
-footer{padding:30px 48px;border-top:1px solid rgba(255,255,255,.07);text-align:center;opacity:.35;font-size:12px;}
-@media(max-width:600px){nav{padding:14px 20px;}.links{display:none;}.hero{padding:70px 20px 50px;}.feats,.stats,.cta-sec{padding:50px 20px;}}
-</style></head><body>
-<nav><div class="logo">★ Brand</div><div class="links"><a href="#">Product</a><a href="#">Pricing</a><a href="#">Docs</a><a href="#">Blog</a></div><button class="cta">Get Started</button></nav>
-<section class="hero">
-  <div class="badge">✦ Now in Beta</div>
-  <h1>Design with <span>Color</span><br>Build with Confidence</h1>
-  <p class="sub">The professional color studio that turns your palette into a complete design system. Export to CSS, Tailwind, and more.</p>
-  <div class="btns"><button class="btn-p">Start Free →</button><button class="btn-g">Watch Demo</button></div>
-</section>
-<div class="feats">
-  <div class="feat"><div class="feat-ico">🎨</div><h3>Smart Palettes</h3><p>Generate harmonious color palettes from any base color using proven color theory algorithms.</p></div>
-  <div class="feat"><div class="feat-ico">⚡</div><h3>Instant Export</h3><p>One click to export your colors as CSS variables, Tailwind config, SCSS, or JSON format.</p></div>
-  <div class="feat"><div class="feat-ico">♿</div><h3>Accessible by Default</h3><p>Built-in WCAG contrast checking ensures your palette meets all accessibility standards.</p></div>
-</div>
-<div class="stats">
-  <div class="stat"><h2>10K+</h2><p>Designers using ChromaStudio</p></div>
-  <div class="stat"><h2>50+</h2><p>Harmony modes available</p></div>
-  <div class="stat"><h2>99%</h2><p>Customer satisfaction rate</p></div>
-</div>
-<div class="cta-sec"><h2>Ready to build beautiful UIs?</h2><p>Join thousands of designers who trust ChromaStudio daily.</p><button class="btn-p">Start for Free →</button></div>
-<footer>© 2025 ChromaStudio · Built with your palette</footer>
-</body></html>`;
-
-      if (type === 'dashboard') return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard — ChromaStudio Preview</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:${c1};color:${t1};min-height:100vh;display:flex;}
-aside{width:220px;background:rgba(0,0,0,.22);border-right:1px solid rgba(255,255,255,.07);padding:20px 14px;display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
-.sb-logo{font-size:16px;font-weight:800;padding:8px 10px 20px;letter-spacing:-.5px;}
-.sb-sec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;opacity:.32;padding:14px 10px 6px;}
-.sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;opacity:.58;transition:all .15s;}
-.sb-item:hover{background:rgba(255,255,255,.07);opacity:.85;}
-.sb-item.active{background:${c2};color:${t2};opacity:1;}
-.sb-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-main{flex:1;padding:28px;overflow-y:auto;min-width:0;}
-.pg-title{font-size:22px;font-weight:800;margin-bottom:5px;letter-spacing:-.5px;}
-.pg-sub{font-size:13px;opacity:.4;margin-bottom:24px;}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;}
-.kpi{padding:20px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);}
-.kpi-lbl{font-size:11px;opacity:.48;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
-.kpi-val{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:4px;}
-.kpi-ch{font-size:11.5px;font-weight:600;}.kpi-ch.up{color:${c2};}.kpi-ch.dn{color:#ff6060;}
-.ch-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px;}
-.ch-card{padding:20px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);}
-.ch-title{font-size:13px;font-weight:700;margin-bottom:16px;}
-.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;}
-.bar{flex:1;border-radius:4px 4px 0 0;cursor:pointer;}.bar:hover{opacity:.8;}
-.pie-list{display:flex;flex-direction:column;gap:9px;padding-top:4px;}
-.pie-item{display:flex;align-items:center;gap:10px;font-size:12px;}
-.pie-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
-.pie-lbl{flex:1;opacity:.68;}
-.pie-pct{font-weight:700;font-size:11px;font-family:monospace;}
-.tbl-card{padding:20px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);}
-.tbl-title{font-size:13px;font-weight:700;margin-bottom:14px;}
-table{width:100%;border-collapse:collapse;}
-th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.38;padding:0 10px 10px 0;}
-td{padding:10px 10px 10px 0;font-size:12.5px;border-top:1px solid rgba(255,255,255,.05);}
-.badge{padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600;display:inline-block;}
-.b-g{background:rgba(0,210,120,.15);color:#00d278;}.b-y{background:rgba(255,200,0,.12);color:#ffc800;}.b-r{background:rgba(255,80,80,.12);color:#ff6060;}
-@media(max-width:700px){aside{display:none;}main{padding:16px;}}
-</style></head><body>
-<aside>
-  <div class="sb-logo">◈ Dashboard</div>
-  <div class="sb-sec">Main</div>
-  <div class="sb-item active"><div class="sb-dot" style="background:${c2}"></div>Overview</div>
-  <div class="sb-item"><div class="sb-dot" style="background:${c3}"></div>Analytics</div>
-  <div class="sb-item"><div class="sb-dot" style="background:${c4}"></div>Projects</div>
-  <div class="sb-item"><div class="sb-dot"></div>Team</div>
-  <div class="sb-sec">System</div>
-  <div class="sb-item"><div class="sb-dot"></div>Settings</div>
-  <div class="sb-item"><div class="sb-dot"></div>Help</div>
-</aside>
-<main>
-  <div class="pg-title">Overview</div>
-  <div class="pg-sub">Your palette in action — built with ChromaStudio</div>
-  <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-lbl">Revenue</div><div class="kpi-val" style="color:${c2}">$48.2K</div><div class="kpi-ch up">↑ 12.4% this month</div></div>
-    <div class="kpi"><div class="kpi-lbl">Users</div><div class="kpi-val">3,842</div><div class="kpi-ch up">↑ 8.1% this week</div></div>
-    <div class="kpi"><div class="kpi-lbl">Churn</div><div class="kpi-val">2.3%</div><div class="kpi-ch dn">↑ 0.4% vs last month</div></div>
-    <div class="kpi"><div class="kpi-lbl">NPS</div><div class="kpi-val">74</div><div class="kpi-ch up">↑ 3 pts</div></div>
-  </div>
-  <div class="ch-row">
-    <div class="ch-card">
-      <div class="ch-title">Monthly Revenue</div>
-      <div class="bar-chart">${[42, 58, 35, 74, 61, 88, 52, 79, 65, 91, 47, 84].map((v, i) => `<div class="bar" style="height:${v}%;background:${p[i % p.length]};opacity:${i === 11 ? 1 : .65}"></div>`).join('')}</div>
-    </div>
-    <div class="ch-card">
-      <div class="ch-title">Traffic Sources</div>
-      <div class="pie-list">${p.slice(0, 5).map((c, i) => { const lb = ['Organic', 'Direct', 'Referral', 'Social', 'Email']; const pc = [38, 25, 18, 12, 7]; return `<div class="pie-item"><div class="pie-dot" style="background:${c}"></div><span class="pie-lbl">${lb[i] || 'Other'}</span><span class="pie-pct">${pc[i] || 3}%</span></div>`; }).join('')}</div>
-    </div>
-  </div>
-  <div class="tbl-card">
-    <div class="tbl-title">Recent Transactions</div>
-    <table><thead><tr><th>Name</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody>
-    <tr><td>Acme Corp</td><td style="font-family:monospace">$4,200</td><td>Today</td><td><span class="badge b-g">Paid</span></td></tr>
-    <tr><td>Stark Industries</td><td style="font-family:monospace">$12,500</td><td>Yesterday</td><td><span class="badge b-y">Pending</span></td></tr>
-    <tr><td>Wayne Enterprises</td><td style="font-family:monospace">$8,750</td><td>Dec 18</td><td><span class="badge b-g">Paid</span></td></tr>
-    <tr><td>Umbrella Co.</td><td style="font-family:monospace">$2,100</td><td>Dec 17</td><td><span class="badge b-r">Failed</span></td></tr>
-    </tbody></table>
-  </div>
-</main></body></html>`;
-
-      if (type === 'portfolio') return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Portfolio — ChromaStudio Preview</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:${c1};color:${t1};}
-nav{display:flex;align-items:center;justify-content:space-between;padding:20px 48px;position:sticky;top:0;z-index:10;backdrop-filter:blur(16px);background:${c1}cc;}
-.logo{font-weight:800;font-size:17px;letter-spacing:-.5px;}
-.links{display:flex;gap:24px;}.links a{text-decoration:none;color:${t1};opacity:.5;font-size:14px;font-weight:500;}.links a:hover{opacity:1;}
-.hero{padding:100px 48px 70px;max-width:920px;}
-.hero-tag{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${c2};margin-bottom:18px;}
-h1{font-size:clamp(40px,6vw,72px);font-weight:800;line-height:1.06;letter-spacing:-2.5px;margin-bottom:22px;}
-h1 em{font-style:normal;background:linear-gradient(135deg,${c2},${c3});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.sub{font-size:17px;opacity:.52;line-height:1.72;max-width:480px;margin-bottom:36px;}
-.acts{display:flex;gap:14px;flex-wrap:wrap;}
-.btn-m{padding:13px 30px;background:${c2};color:${t2};border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px;font-family:'Inter',sans-serif;}
-.btn-o{padding:13px 30px;background:transparent;color:${t1};border:1.5px solid rgba(255,255,255,.2);border-radius:9px;font-weight:600;cursor:pointer;font-size:14px;font-family:'Inter',sans-serif;}
-.work{padding:60px 48px;max-width:1100px;margin:0 auto;}
-.w-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;opacity:.32;margin-bottom:22px;}
-.w-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
-.w-card{border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .22s;}.w-card:hover{transform:translateY(-5px);}
-.w-img{height:200px;display:flex;align-items:center;justify-content:center;font-size:38px;}
-.w-meta{padding:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-top:none;}
-.w-meta h3{font-size:15px;font-weight:700;margin-bottom:4px;}.w-meta p{font-size:12px;opacity:.48;}
-.skills{padding:60px 48px;background:rgba(255,255,255,.03);}
-.s-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;opacity:.32;margin-bottom:18px;max-width:1000px;margin-left:auto;margin-right:auto;}
-.s-grid{display:flex;gap:10px;flex-wrap:wrap;max-width:1000px;margin:0 auto;}
-.chip{padding:8px 16px;border-radius:100px;font-size:12.5px;font-weight:600;border:1.5px solid;}
-footer{padding:40px 48px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;opacity:.3;font-size:12px;flex-wrap:wrap;gap:10px;}
-@media(max-width:600px){nav{padding:16px 20px;}.links{display:none;}.hero{padding:70px 20px 50px;}.work,.skills{padding:40px 20px;}footer{padding:24px 20px;}}
-</style></head><body>
-<nav><div class="logo">Alex Design</div><div class="links"><a href="#">Work</a><a href="#">About</a><a href="#">Skills</a><a href="#">Contact</a></div></nav>
-<div class="hero">
-  <div class="hero-tag">✦ Creative Developer</div>
-  <h1>I craft <em>beautiful</em><br>digital experiences</h1>
-  <p class="sub">Full-stack designer & developer crafting interfaces that make people feel something. Currently open to freelance.</p>
-  <div class="acts"><button class="btn-m">View My Work →</button><button class="btn-o">Get in Touch</button></div>
-</div>
-<div class="work">
-  <div class="w-title">Selected Work</div>
-  <div class="w-grid">${p.slice(0, 4).map((c, i) => { const pr = [['Brand Identity', 'Visual Design'], ['Mobile App', 'UI/UX Design'], ['Web Platform', 'Full-stack Dev'], ['3D Motion', 'Creative Dev']]; const em = ['🎨', '📱', '🌐', '🎬']; return `<div class="w-card"><div class="w-img" style="background:linear-gradient(135deg,${c},${p[(i + 1) % p.length]})">${em[i]}</div><div class="w-meta"><h3>${pr[i][0]}</h3><p>${pr[i][1]}</p></div></div>`; }).join('')}</div>
-</div>
-<div class="skills">
-  <div class="s-title">Skills &amp; Tools</div>
-  <div class="s-grid">${['Figma', 'React', 'TypeScript', 'Tailwind CSS', 'Motion Design', 'Three.js', 'Node.js', 'Framer'].map((s, i) => `<div class="chip" style="color:${p[i % p.length]};border-color:${p[i % p.length]}44;background:${p[i % p.length]}11">${s}</div>`).join('')}</div>
-</div>
-<footer><span>© 2025 Alex Design</span><span>Made with ♥ &amp; ChromaStudio</span></footer>
-</body></html>`;
-
-      if (type === 'ecommerce') return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Store — ChromaStudio Preview</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f8f8f6;color:#111;}
-nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:100;}
-.logo{font-weight:800;font-size:18px;letter-spacing:-.5px;color:${c1};}
-.links{display:flex;gap:24px;}.links a{text-decoration:none;color:#333;font-size:14px;font-weight:500;}.links a:hover{color:${c2};}
-.cart{padding:9px 20px;background:${c1};color:${t1};border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;}
-.hero{background:${c1};color:${t1};padding:70px 48px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
-.hero h1{font-size:clamp(32px,4vw,54px);font-weight:800;line-height:1.1;letter-spacing:-1.5px;margin-bottom:14px;}
-.hero p{opacity:.62;font-size:15px;line-height:1.65;margin-bottom:28px;}
-.shop-btn{padding:13px 30px;background:${c2};color:${t2};border:none;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px;font-family:'Inter',sans-serif;}
-.hero-vis{background:rgba(255,255,255,.1);border-radius:16px;height:260px;display:flex;align-items:center;justify-content:center;font-size:72px;}
-.prods{padding:60px 48px;max-width:1200px;margin:0 auto;}
-.p-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;margin-bottom:20px;}
-.p-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;}
-.p-card{background:#fff;border-radius:14px;overflow:hidden;cursor:pointer;transition:box-shadow .2s;}.p-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.12);}
-.p-img{height:190px;display:flex;align-items:center;justify-content:center;font-size:48px;}
-.p-body{padding:14px;}
-.p-name{font-weight:700;font-size:14px;margin-bottom:4px;}
-.p-cat{font-size:11px;color:#aaa;margin-bottom:10px;font-weight:500;}
-.p-foot{display:flex;align-items:center;justify-content:space-between;}
-.p-price{font-size:18px;font-weight:800;color:${c1};}
-.add-btn{padding:7px 14px;background:${c2};color:${t2};border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;}
-.banner{background:${c2};color:${t2};padding:44px;text-align:center;max-width:1100px;margin:0 48px 60px;border-radius:16px;}
-.banner h2{font-size:28px;font-weight:800;margin-bottom:8px;letter-spacing:-.5px;}
-.banner p{opacity:.75;font-size:14px;margin-bottom:20px;}
-footer{background:#111;color:#888;padding:32px 48px;display:flex;justify-content:space-between;font-size:12px;flex-wrap:wrap;gap:10px;}
-@media(max-width:700px){.hero{grid-template-columns:1fr;padding:44px 20px;}.hero-vis{display:none;}.prods{padding:40px 20px;}.banner{margin:0 20px 40px;padding:30px 20px;}nav{padding:0 20px;}.links{display:none;}footer{padding:24px 20px;}}
-</style></head><body>
-<nav><div class="logo">✦ Shop</div><div class="links"><a href="#">Men</a><a href="#">Women</a><a href="#">Sale</a><a href="#">New In</a></div><button class="cart">🛒 Cart (0)</button></nav>
-<div class="hero">
-  <div><h1>New Season,<br>New Colors</h1><p>Discover our latest collection, inspired by ChromaStudio palettes and crafted for modern living.</p><button class="shop-btn">Shop Now →</button></div>
-  <div class="hero-vis">🎁</div>
-</div>
-<div class="prods">
-  <div class="p-title">Featured Products</div>
-  <div class="p-grid">${p.slice(0, 6).map((c, i) => { const it = [['Palette Tee', 'Apparel', '$42'], ['Studio Mug', 'Home', '$28'], ['Color Book', 'Design', '$59'], ['Gradient Hat', 'Apparel', '$36'], ['Swatch Bag', 'Accessories', '$74'], ['Hue Hoodie', 'Apparel', '$89']]; const em = ['👕', '☕', '📚', '🧢', '👜', '🧥']; return `<div class="p-card"><div class="p-img" style="background:${c}22">${em[i]}</div><div class="p-body"><div class="p-name">${it[i][0]}</div><div class="p-cat">${it[i][1]}</div><div class="p-foot"><div class="p-price">${it[i][2]}</div><button class="add-btn">Add +</button></div></div></div>`; }).join('')}</div>
-</div>
-<div class="banner"><h2>Summer Sale — Up to 40% Off</h2><p>Limited time offer on all palette-inspired products.</p><button class="shop-btn" style="background:${t2 === '#fff' ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.12)'};color:${t2}">Shop the Sale</button></div>
-<footer><span>© 2025 Shop · ChromaStudio Demo</span><span>Returns · Privacy · Terms</span></footer>
-</body></html>`;
-
-      return '';
+      try {
+        if (type === 'landing')    return window.buildLanding ? window.buildLanding(p) : '';
+        if (type === 'dashboard')  return window.buildDashboard ? window.buildDashboard(p) : '';
+        if (type === 'portfolio')  return window.buildPortfolio ? window.buildPortfolio(p) : '';
+        if (type === 'ecommerce')  return window.buildEcommerce ? window.buildEcommerce(p) : '';
+        if (type === 'components') return window.buildComponents ? window.buildComponents(p) : '';
+        return '';
+      } catch (e) {
+        console.error('Error in buildSite for type:', type, e);
+        return '';
+      }
     }
 
-    function openPreview(type) {
-      const html = buildSite(type, state.palette);
-      const w = window.open('', '_blank');
-      if (w) { w.document.write(html); w.document.close(); }
-      else showToast('Allow pop-ups to open preview');
+    window.buildLanding = function(p) {
+      const c1=p[0],c2=p[1]||p[0],c3=p[2]||p[0],t1=textOn(c1),t2=textOn(c2);
+      return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Landing</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:${c1};color:${t1}}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:${c1}e0;backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo{font-weight:800;font-size:17px}.links{display:flex;gap:24px}.links a{text-decoration:none;color:${t1};opacity:.6;font-size:13px;font-weight:500;transition:opacity .15s}.links a:hover{opacity:1}
+.nav-cta{padding:8px 18px;background:${c2};color:${t2};border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:opacity .15s}.nav-cta:hover{opacity:.85}
+.hero{padding:110px 48px 80px;text-align:center;max-width:800px;margin:0 auto}
+.badge{display:inline-block;padding:5px 14px;background:${c2}25;border:1px solid ${c2}50;border-radius:100px;font-size:11px;font-weight:700;color:${c2};margin-bottom:24px;letter-spacing:.6px;text-transform:uppercase}
+h1{font-size:clamp(36px,6vw,66px);font-weight:800;line-height:1.07;letter-spacing:-2px;margin-bottom:20px}h1 span{color:${c2}}
+.sub{font-size:17px;opacity:.58;line-height:1.72;margin-bottom:36px;max-width:500px;margin-left:auto;margin-right:auto}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-p{padding:13px 32px;background:${c2};color:${t2};border:none;border-radius:9px;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer;transition:transform .15s,box-shadow .15s}.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 28px ${c2}55}
+.btn-g{padding:13px 32px;background:transparent;color:${t1};border:1.5px solid rgba(255,255,255,.2);border-radius:9px;font-weight:600;font-size:14px;font-family:inherit;cursor:pointer;transition:background .15s}.btn-g:hover{background:rgba(255,255,255,.07)}
+.feats{padding:70px 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;max-width:1100px;margin:0 auto}
+.feat{padding:26px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);transition:transform .2s,box-shadow .2s;cursor:default}.feat:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.25)}
+.feat-ico{width:44px;height:44px;border-radius:10px;background:${c2};display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+.feat h3{font-size:16px;font-weight:700;margin-bottom:7px}.feat p{font-size:13px;opacity:.55;line-height:1.6}
+.stats{padding:50px 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;max-width:860px;margin:0 auto;text-align:center}
+.stat h2{font-size:42px;font-weight:800;color:${c2};letter-spacing:-1.5px}.stat p{font-size:12px;opacity:.45;margin-top:4px}
+.cta-sec{padding:70px 48px;text-align:center;background:linear-gradient(135deg,${c2}20,${c3}15);border-top:1px solid rgba(255,255,255,.06)}
+.cta-sec h2{font-size:34px;font-weight:800;margin-bottom:12px;letter-spacing:-.8px}.cta-sec p{opacity:.55;margin-bottom:26px;font-size:15px}
+.email-row{display:flex;gap:8px;justify-content:center;max-width:400px;margin:0 auto;flex-wrap:wrap}
+.email-in{flex:1;min-width:180px;padding:11px 14px;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:${t1};font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}.email-in:focus{border-color:${c2}}.email-in::placeholder{opacity:.4}
+.email-btn{padding:11px 22px;background:${c2};color:${t2};border:none;border-radius:8px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:opacity .15s}.email-btn:hover{opacity:.85}
+footer{padding:26px 48px;border-top:1px solid rgba(255,255,255,.06);text-align:center;opacity:.3;font-size:11px}
+#toast-msg{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#eee;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.12);opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999}
+#toast-msg.show{opacity:1}
+@media(max-width:600px){.nav{padding:0 16px}.links{display:none}.hero{padding:60px 20px 50px}.feats,.stats,.cta-sec{padding:40px 20px}footer{padding:20px}}
+</style></head><body>
+<nav class="nav"><div class="logo">★ Brand</div><div class="links"><a href="#feats">Features</a><a href="#stats">Stats</a><a href="#cta">Pricing</a></div><button class="nav-cta" onclick="showT('✓ Welcome aboard!')">Get Started</button></nav>
+<section class="hero">
+  <div class="badge">✦ Now in public beta</div>
+  <h1>Design with <span>Color</span><br>Build with Confidence</h1>
+  <p class="sub">The professional color studio that turns your palette into a complete design system — export to CSS, Tailwind, Figma and more.</p>
+  <div class="btns">
+    <button class="btn-p" onclick="showT('🚀 Starting your trial...')">Start Free →</button>
+    <button class="btn-g" onclick="showT('▶ Opening demo...')">Watch Demo</button>
+  </div>
+</section>
+<div id="feats" class="feats">
+  <div class="feat"><div class="feat-ico">🎨</div><h3>Smart Palettes</h3><p>Generate harmonious color palettes from any base color using proven color theory algorithms.</p></div>
+  <div class="feat"><div class="feat-ico">⚡</div><h3>Instant Export</h3><p>One click to export your colors as CSS variables, Tailwind config, SCSS, shadcn or Figma JSON.</p></div>
+  <div class="feat"><div class="feat-ico">♿</div><h3>Accessible by Default</h3><p>WCAG 2.1 and APCA contrast checking built in so every palette ships accessibility-ready.</p></div>
+</div>
+<div id="stats" class="stats">
+  <div class="stat"><h2>10K+</h2><p>Designers using ChromaStudio</p></div>
+  <div class="stat"><h2>50+</h2><p>Color harmony modes</p></div>
+  <div class="stat"><h2>99%</h2><p>Customer satisfaction</p></div>
+</div>
+<div id="cta" class="cta-sec">
+  <h2>Ready to ship beautiful UIs?</h2>
+  <p>Enter your email and get started in 30 seconds — no credit card needed.</p>
+  <div class="email-row">
+    <input class="email-in" id="email-in" type="email" placeholder="you@company.com">
+    <button class="email-btn" onclick="subEmail()">Get Early Access</button>
+  </div>
+</div>
+<footer>© 2025 ChromaStudio · Built with your palette</footer>
+<div id="toast-msg"></div>
+<script>
+function showT(msg){const t=document.getElementById('toast-msg');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}
+function subEmail(){const v=document.getElementById('email-in').value;if(!v||!v.includes('@')){showT('⚠ Please enter a valid email');return}showT('✓ '+v+' added to the list!')}
+document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const id=a.getAttribute('href').slice(1);document.getElementById(id)?.scrollIntoView({behavior:'smooth'})}))
+</script></body></html>`;
     }
 
     function renderPreview() {
       const p = state.palette;
+      const c1 = p[0], c2 = p[1] || p[0];
       const cards = [
-        { type: 'landing', emoji: '🚀', title: 'Landing Page', desc: 'Hero, features, stats & CTA — full marketing site' },
-        { type: 'dashboard', emoji: '📊', title: 'Admin Dashboard', desc: 'KPIs, bar chart, pie chart & data table' },
-        { type: 'portfolio', emoji: '🎨', title: 'Portfolio Site', desc: 'Creative portfolio with work grid & skill chips' },
-        { type: 'ecommerce', emoji: '🛍️', title: 'E-Commerce Store', desc: 'Product grid, hero banner & checkout UI' }
+        { type: 'landing',    label: 'Marketing',  title: 'Landing Page',      desc: 'Hero · features · stats · CTA · email signup', bg: `linear-gradient(135deg,${c1},${c2})` },
+        { type: 'dashboard',  label: 'App',        title: 'Admin Dashboard',   desc: 'Live sidebar · KPIs · bar chart · data table', bg: `linear-gradient(135deg,${c2},${p[2]||c2})` },
+        { type: 'portfolio',  label: 'Portfolio',  title: 'Portfolio Site',    desc: 'Work grid · skill chips · contact form', bg: `linear-gradient(135deg,${p[2]||c1},${c1})` },
+        { type: 'ecommerce',  label: 'Commerce',   title: 'E-Commerce Store',  desc: 'Cart counter · product grid · modal · filters', bg: `linear-gradient(135deg,${p[3]||c2},${c2})` },
+        { type: 'components', label: 'UI Kit',     title: 'Component Library', desc: 'Every interactive element — buttons, forms, modals, toggles', bg: `linear-gradient(135deg,${p[4]||c1},${c2})` }
       ];
       document.getElementById('prev-grid').innerHTML = cards.map(card => `
-    <div class="prev-card" onclick="openPreview('${card.type}')">
-      <div class="prev-overlay">
-        <div class="prev-open-btn">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Open Full Site
-        </div>
-      </div>
-      <div class="prev-inner" style="background:${p[0]};color:${textOn(p[0])}">
-        <div style="font-size:32px;margin-bottom:12px">${card.emoji}</div>
-        <h4>${card.title}</h4>
-        <p>${card.desc}</p>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:10px">
-          ${p.map(c => `<div style="width:18px;height:18px;border-radius:4px;background:${c};border:1.5px solid rgba(255,255,255,.18)"></div>`).join('')}
-        </div>
-        <button class="prev-btn" style="margin-top:14px;background:${p[1] || p[0]};color:${textOn(p[1] || p[0])}">Click to Open →</button>
-      </div>
-    </div>`).join('');
+    <button class="preview-launch-card" onclick="openPreview('${card.type}')" style="background:${card.bg};--card-accent:${c2}">
+      <span class="preview-launch-card__badge">${card.label}</span>
+      <span class="preview-launch-card__title">${card.title}</span>
+      <span class="preview-launch-card__desc">${card.desc}</span>
+      <span class="preview-launch-card__swatches">${p.slice(0,6).map(c=>`<i style="background:${c}"></i>`).join('')}</span>
+      <span class="preview-launch-card__action">Open live preview →</span>
+    </button>`).join('');
+    }
+
+    function withPreviewButtonSound(html) {
+      const soundScript = `<script>
+const previewButtonClickSoundUrl = ${JSON.stringify(new URL('click.wav', window.location.href).href)};
+document.addEventListener('click', function (event) {
+  if (!event.isTrusted) return;
+  const button = event.target.closest('button');
+  if (!button || button.disabled) return;
+  const sound = new Audio(previewButtonClickSoundUrl);
+  sound.volume = 0.35;
+  sound.play().catch(() => {});
+});
+</script>`;
+      return html.includes('</body>') ? html.replace('</body>', soundScript + '</body>') : html + soundScript;
+    }
+
+    function openPreview(type) {
+      console.log('Opening preview for type:', type);
+      console.log('Available builders:', {
+        buildLanding: typeof window.buildLanding,
+        buildDashboard: typeof window.buildDashboard,
+        buildPortfolio: typeof window.buildPortfolio,
+        buildEcommerce: typeof window.buildEcommerce,
+        buildComponents: typeof window.buildComponents
+      });
+      const html = buildSite(type, state.palette);
+      console.log('HTML length:', html ? html.length : 'null/empty');
+      if (!html) {
+        console.error('buildSite returned empty HTML for type:', type);
+        return;
+      }
+      const w = window.open('', '_blank');
+      if (w) { w.document.write(withPreviewButtonSound(html)); w.document.close(); }
+      else showToast('Allow pop-ups to open preview');
     }
 
     // ══ CONTRAST ══
@@ -815,8 +702,18 @@ footer{background:#111;color:#888;padding:32px 48px;display:flex;justify-content
       document.getElementById('mob-nav').innerHTML = tools.map(([t, l]) => `
     <button class="rp-xbtn" style="${currentTool === t ? 'background:rgba(124,106,255,.15);border-color:var(--accent);color:#fff' : ''}" onclick="switchTool('${t}');closeMob()">${l}</button>`).join('');
     }
-    function openMob() { document.getElementById('mob-drawer').classList.add('open'); document.getElementById('mob-overlay').classList.add('show'); renderMobNav(); renderMobHarmony(); }
-    function closeMob() { document.getElementById('mob-drawer').classList.remove('open'); document.getElementById('mob-overlay').classList.remove('show'); }
+    function openMob() {
+      document.body.classList.add('mob-open');
+      document.getElementById('mob-drawer').classList.add('open');
+      document.getElementById('mob-overlay').classList.add('show');
+      renderMobNav();
+      renderMobHarmony();
+    }
+    function closeMob() {
+      document.body.classList.remove('mob-open');
+      document.getElementById('mob-drawer').classList.remove('open');
+      document.getElementById('mob-overlay').classList.remove('show');
+    }
 
     // ══ COPY / EXPORT ══
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1800); }
@@ -855,10 +752,20 @@ footer{background:#111;color:#888;padding:32px 48px;display:flex;justify-content
 
     // ══ KEYBOARD ══
     document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeMob();
+        return;
+      }
       if (e.target.tagName === 'INPUT') return;
       if (e.key === 'r' || e.key === 'R') randomize();
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+    });
+    document.addEventListener('click', e => {
+      if (!e.isTrusted) return;
+      const button = e.target.closest('button');
+      if (!button || button.disabled) return;
+      playButtonClickSound();
     });
 
     // ══ INIT ══
