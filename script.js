@@ -2,15 +2,6 @@
     const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
     let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', colorBlindMode: 'none' };
     let hist = [], histIdx = -1, currentTool = 'colors';
-    const buttonClickSound = new Audio('click.wav');
-    buttonClickSound.preload = 'auto';
-    buttonClickSound.volume = 0.35;
-
-    function playButtonClickSound() {
-      const sound = buttonClickSound.cloneNode();
-      sound.volume = buttonClickSound.volume;
-      sound.play().catch(() => { });
-    }
 
     // ══ COLOR MATH ══
     function hexToHsl(hex) {
@@ -431,17 +422,12 @@
 
     // ══ PREVIEW — opens full interactive websites ══
     function buildSite(type, p) {
-      try {
-        if (type === 'landing')    return window.buildLanding ? window.buildLanding(p) : '';
-        if (type === 'dashboard')  return window.buildDashboard ? window.buildDashboard(p) : '';
-        if (type === 'portfolio')  return window.buildPortfolio ? window.buildPortfolio(p) : '';
-        if (type === 'ecommerce')  return window.buildEcommerce ? window.buildEcommerce(p) : '';
-        if (type === 'components') return window.buildComponents ? window.buildComponents(p) : '';
-        return '';
-      } catch (e) {
-        console.error('Error in buildSite for type:', type, e);
-        return '';
-      }
+      if (type === 'landing')    return window.buildLanding(p);
+      if (type === 'dashboard')  return window.buildDashboard(p);
+      if (type === 'portfolio')  return window.buildPortfolio(p);
+      if (type === 'ecommerce')  return window.buildEcommerce(p);
+      if (type === 'components') return window.buildComponents(p);
+      return '';
     }
 
     window.buildLanding = function(p) {
@@ -516,54 +502,31 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
       const p = state.palette;
       const c1 = p[0], c2 = p[1] || p[0];
       const cards = [
-        { type: 'landing',    label: 'Marketing',  title: 'Landing Page',      desc: 'Hero · features · stats · CTA · email signup', bg: `linear-gradient(135deg,${c1},${c2})` },
-        { type: 'dashboard',  label: 'App',        title: 'Admin Dashboard',   desc: 'Live sidebar · KPIs · bar chart · data table', bg: `linear-gradient(135deg,${c2},${p[2]||c2})` },
-        { type: 'portfolio',  label: 'Portfolio',  title: 'Portfolio Site',    desc: 'Work grid · skill chips · contact form', bg: `linear-gradient(135deg,${p[2]||c1},${c1})` },
-        { type: 'ecommerce',  label: 'Commerce',   title: 'E-Commerce Store',  desc: 'Cart counter · product grid · modal · filters', bg: `linear-gradient(135deg,${p[3]||c2},${c2})` },
-        { type: 'components', label: 'UI Kit',     title: 'Component Library', desc: 'Every interactive element — buttons, forms, modals, toggles', bg: `linear-gradient(135deg,${p[4]||c1},${c2})` }
+        { type: 'landing',    label: 'Marketing', title: 'Landing Page',      icon: '🚀', desc: 'Hero, features, stats, CTA and signup flow.', highlights: ['Hero CTA', 'Feature blocks'], bg: `linear-gradient(135deg,${c1},${c2})` },
+        { type: 'dashboard',  label: 'App',       title: 'Admin Dashboard',   icon: '📊', desc: 'Sidebar, analytics cards, chart and data table.', highlights: ['Live KPIs', 'Team views'], bg: `linear-gradient(135deg,${c2},${p[2]||c2})` },
+        { type: 'portfolio',  label: 'Portfolio', title: 'Portfolio Site',    icon: '🎨', desc: 'Creative case studies, skills and contact funnel.', highlights: ['Work gallery', 'Contact form'], bg: `linear-gradient(135deg,${p[2]||c1},${c1})` },
+        { type: 'ecommerce',  label: 'Commerce',  title: 'E-Commerce Store',  icon: '🛍️', desc: 'Product discovery, filters, cart drawer and checkout.', highlights: ['Cart drawer', 'Category filters'], bg: `linear-gradient(135deg,${p[3]||c2},${c2})` },
+        { type: 'components', label: 'UI Kit',    title: 'Component Library', icon: '🧩', desc: 'Interactive buttons, forms, alerts, tabs and modals.', highlights: ['Design system', 'Interactive states'], bg: `linear-gradient(135deg,${p[4]||c1},${c2})` }
       ];
       document.getElementById('prev-grid').innerHTML = cards.map(card => `
     <button class="preview-launch-card" onclick="openPreview('${card.type}')" style="background:${card.bg};--card-accent:${c2}">
-      <span class="preview-launch-card__badge">${card.label}</span>
+      <span class="preview-launch-card__top">
+        <span class="preview-launch-card__badge">${card.label}</span>
+        <span class="preview-launch-card__icon" aria-hidden="true">${card.icon}</span>
+      </span>
       <span class="preview-launch-card__title">${card.title}</span>
       <span class="preview-launch-card__desc">${card.desc}</span>
+      <span class="preview-launch-card__meta">${card.highlights.map(item=>`<i>${item}</i>`).join('')}</span>
       <span class="preview-launch-card__swatches">${p.slice(0,6).map(c=>`<i style="background:${c}"></i>`).join('')}</span>
       <span class="preview-launch-card__action">Open live preview →</span>
     </button>`).join('');
     }
 
-    function withPreviewButtonSound(html) {
-      const soundScript = `<script>
-const previewButtonClickSoundUrl = ${JSON.stringify(new URL('click.wav', window.location.href).href)};
-document.addEventListener('click', function (event) {
-  if (!event.isTrusted) return;
-  const button = event.target.closest('button');
-  if (!button || button.disabled) return;
-  const sound = new Audio(previewButtonClickSoundUrl);
-  sound.volume = 0.35;
-  sound.play().catch(() => {});
-});
-</script>`;
-      return html.includes('</body>') ? html.replace('</body>', soundScript + '</body>') : html + soundScript;
-    }
-
     function openPreview(type) {
-      console.log('Opening preview for type:', type);
-      console.log('Available builders:', {
-        buildLanding: typeof window.buildLanding,
-        buildDashboard: typeof window.buildDashboard,
-        buildPortfolio: typeof window.buildPortfolio,
-        buildEcommerce: typeof window.buildEcommerce,
-        buildComponents: typeof window.buildComponents
-      });
       const html = buildSite(type, state.palette);
-      console.log('HTML length:', html ? html.length : 'null/empty');
-      if (!html) {
-        console.error('buildSite returned empty HTML for type:', type);
-        return;
-      }
+      if (!html) return;
       const w = window.open('', '_blank');
-      if (w) { w.document.write(withPreviewButtonSound(html)); w.document.close(); }
+      if (w) { w.document.write(html); w.document.close(); }
       else showToast('Allow pop-ups to open preview');
     }
 
@@ -702,18 +665,8 @@ document.addEventListener('click', function (event) {
       document.getElementById('mob-nav').innerHTML = tools.map(([t, l]) => `
     <button class="rp-xbtn" style="${currentTool === t ? 'background:rgba(124,106,255,.15);border-color:var(--accent);color:#fff' : ''}" onclick="switchTool('${t}');closeMob()">${l}</button>`).join('');
     }
-    function openMob() {
-      document.body.classList.add('mob-open');
-      document.getElementById('mob-drawer').classList.add('open');
-      document.getElementById('mob-overlay').classList.add('show');
-      renderMobNav();
-      renderMobHarmony();
-    }
-    function closeMob() {
-      document.body.classList.remove('mob-open');
-      document.getElementById('mob-drawer').classList.remove('open');
-      document.getElementById('mob-overlay').classList.remove('show');
-    }
+    function openMob() { document.getElementById('mob-drawer').classList.add('open'); document.getElementById('mob-overlay').classList.add('show'); renderMobNav(); renderMobHarmony(); }
+    function closeMob() { document.getElementById('mob-drawer').classList.remove('open'); document.getElementById('mob-overlay').classList.remove('show'); }
 
     // ══ COPY / EXPORT ══
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1800); }
@@ -752,20 +705,10 @@ document.addEventListener('click', function (event) {
 
     // ══ KEYBOARD ══
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        closeMob();
-        return;
-      }
       if (e.target.tagName === 'INPUT') return;
       if (e.key === 'r' || e.key === 'R') randomize();
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
-    });
-    document.addEventListener('click', e => {
-      if (!e.isTrusted) return;
-      const button = e.target.closest('button');
-      if (!button || button.disabled) return;
-      playButtonClickSound();
     });
 
     // ══ INIT ══
