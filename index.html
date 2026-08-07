@@ -49,6 +49,14 @@
       </svg>
       Randomize
     </button>
+    <button class="top-help" onclick="openOnboarding(true)">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M9.4 9.2a2.7 2.7 0 1 1 4.45 2.05c-.8.64-1.35 1.1-1.35 2.25"></path>
+        <circle cx="12" cy="16.8" r="1"></circle>
+      </svg>
+      Guide
+    </button>
     <div id="mob-menu-btn" onclick="openMob()">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="6" x2="21" y2="6" />
@@ -238,6 +246,14 @@
     </div>
     <div class="mob-title">Views</div>
     <div style="display:flex;flex-direction:column;gap:4px;" id="mob-nav"></div>
+    <div class="mob-title">Help</div>
+    <button class="rp-xbtn" onclick="openOnboarding(true);closeMob()">
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M9.4 9.2a2.7 2.7 0 1 1 4.45 2.05c-.8.64-1.35 1.1-1.35 2.25"></path>
+        <circle cx="12" cy="16.8" r="1"></circle>
+      </svg>Open guide
+    </button>
     <div class="mob-title">Base Color</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <button id="mob-cpick"
@@ -284,6 +300,26 @@
           fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2L2 7l10 5 10-5-10-5z" />
         </svg>Figma</button>
+    </div>
+  </div>
+
+  <div id="onboarding-overlay" aria-hidden="true">
+    <div class="ob-shell" role="dialog" aria-modal="true" aria-labelledby="ob-title">
+      <div class="ob-progress-wrap">
+        <div class="ob-progress-bar">
+          <div class="ob-progress-fill" id="ob-progress-fill"></div>
+        </div>
+        <span class="ob-progress-label" id="ob-progress-label">1 / 5</span>
+      </div>
+      <div class="ob-dots" id="ob-dots"></div>
+      <div class="ob-body" id="ob-body"></div>
+      <div class="ob-footer">
+        <button class="ob-link-btn" onclick="finishOnboarding(true)">Skip intro</button>
+        <div class="ob-footer-actions">
+          <button class="ob-btn ob-btn-secondary" id="ob-back-btn" onclick="changeOnboardingStep(-1)">Back</button>
+          <button class="ob-btn ob-btn-primary" id="ob-next-btn" onclick="changeOnboardingStep(1)">Next</button>
+        </div>
+      </div>
     </div>
   </div>
 

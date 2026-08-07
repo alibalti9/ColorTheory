@@ -2,6 +2,9 @@
     const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
     let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', colorBlindMode: 'none' };
     let hist = [], histIdx = -1, currentTool = 'colors';
+    const ONBOARDING_STORAGE_KEY = 'chromaStudio_onboarded_v1';
+    const ONBOARDING_TOTAL_STEPS = 5;
+    let onboardingStep = 1;
 
     // ══ COLOR MATH ══
     function hexToHsl(hex) {
@@ -167,6 +170,181 @@
       state.palette = generate(state.base, state.count, state.harmony); render();
     }
     function onHexInput(v) { if (/^#[0-9A-Fa-f]{6}$/.test(v)) setBase(v); }
+
+    // ══ ONBOARDING ══
+    function isOnboardingOpen() {
+      return document.getElementById('onboarding-overlay')?.classList.contains('show');
+    }
+
+    function hasCompletedOnboarding() {
+      return localStorage.getItem(ONBOARDING_STORAGE_KEY) === '1';
+    }
+
+    function getOnboardingStepMarkup(step) {
+      if (step === 1) {
+        return `
+          <div class="ob-step-icon">🎨</div>
+          <div class="ob-kicker">Step 1 of ${ONBOARDING_TOTAL_STEPS}</div>
+          <h2 class="ob-title" id="ob-title">Build a palette in a few clicks</h2>
+          <p class="ob-copy">ChromaStudio starts from one base color, generates a matching palette, and lets you preview or export the result without leaving the page.</p>
+          <div class="ob-card-list">
+            <div class="ob-card-item"><i>🖍️</i><div><strong>Pick a starting color</strong><span>Use the base swatch or type a hex code to define the palette direction.</span></div></div>
+            <div class="ob-card-item"><i>🔮</i><div><strong>Choose a harmony</strong><span>Switch between calm, bold, or playful color relationships from the context bar.</span></div></div>
+            <div class="ob-card-item"><i>🧪</i><div><strong>Check before shipping</strong><span>Preview the palette on sample UIs and verify readability in the contrast view.</span></div></div>
+          </div>
+          <div class="ob-note"><strong>Tip:</strong> You can reopen this guide anytime from the <strong>Guide</strong> button in the top bar.</div>
+        `;
+      }
+
+      if (step === 2) {
+        return `
+          <div class="ob-step-icon">🖍️</div>
+          <div class="ob-kicker">Step 2 of ${ONBOARDING_TOTAL_STEPS}</div>
+          <h2 class="ob-title" id="ob-title">Start with one color</h2>
+          <p class="ob-copy">Your base color drives the whole palette. Change it from the context bar, paste a hex code, or randomize until you find a direction you like.</p>
+          <div class="ob-inline-actions">
+            <button class="ob-chip" onclick="onboardingAction('focus-colors')">Open color tools</button>
+            <button class="ob-chip" onclick="onboardingAction('randomize')">Randomize palette</button>
+          </div>
+          <div class="ob-card-list">
+            <div class="ob-card-item"><i>🎯</i><div><strong>Base color</strong><span>Currently set to <strong>${state.base.toUpperCase()}</strong>. This is the anchor for every generated color.</span></div></div>
+            <div class="ob-card-item"><i>➕</i><div><strong>Palette size</strong><span>You currently have <strong>${state.count}</strong> colors. Use the stepper to keep the set compact or expand it.</span></div></div>
+            <div class="ob-card-item"><i>⚡</i><div><strong>Fast exploration</strong><span>The <strong>Randomize</strong> button is useful when you want inspiration instead of a precise starting point.</span></div></div>
+          </div>
+          <div class="ob-note"><strong>Good first move:</strong> pick a brand or product color you already trust, then adjust from there instead of starting from scratch.</div>
+        `;
+      }
+
+      if (step === 3) {
+        const featuredModes = ['Complementary', 'Analogous', 'Triadic', 'Monochromatic', 'Split-Comp'];
+        const modeCopy = {
+          'Complementary': 'High contrast. Great when you want a clear accent color.',
+          'Analogous': 'Softer and more unified. Good for calm, polished interfaces.',
+          'Triadic': 'More energetic and varied. Useful for colorful brands and highlights.',
+          'Monochromatic': 'Safest option for clean systems and minimal UI work.',
+          'Split-Comp': 'Balanced between bold and flexible, with a little more range.'
+        };
+        return `
+          <div class="ob-step-icon">🔮</div>
+          <div class="ob-kicker">Step 3 of ${ONBOARDING_TOTAL_STEPS}</div>
+          <h2 class="ob-title" id="ob-title">Choose the palette mood</h2>
+          <p class="ob-copy">Harmony controls how the rest of the colors relate to your base. Try a few options and keep the one that matches the tone of your project.</p>
+          <div class="ob-chip-row">
+            ${featuredModes.map(mode => `<button class="ob-chip${state.harmony === mode ? ' active' : ''}" onclick="setHarmony('${mode}');renderOnboarding();">${mode}</button>`).join('')}
+          </div>
+          <div class="ob-card-list">
+            <div class="ob-card-item"><i>✨</i><div><strong>Current harmony</strong><span><strong>${state.harmony}</strong> is active right now, so the live palette behind this guide already reflects it.</span></div></div>
+            <div class="ob-card-item"><i>🧠</i><div><strong>What to look for</strong><span>${modeCopy[state.harmony] || 'Experiment with a few modes and compare how balanced the palette feels.'}</span></div></div>
+          </div>
+          <div class="ob-note"><strong>Shortcut:</strong> if you want fewer decisions, start with <strong>Monochromatic</strong> or <strong>Analogous</strong> and branch out only if the UI needs more contrast.</div>
+        `;
+      }
+
+      if (step === 4) {
+        const tools = [
+          ['wheel', '⭕', 'Wheel', 'See how your colors sit around the spectrum.'],
+          ['shades', '🌗', 'Shades', 'Generate lighter and darker steps for each color.'],
+          ['preview', '🖥️', 'Preview', 'View your palette on full sample websites.'],
+          ['contrast', '♿', 'Contrast', 'Check whether text remains readable.']
+        ];
+        return `
+          <div class="ob-step-icon">🗂️</div>
+          <div class="ob-kicker">Step 4 of ${ONBOARDING_TOTAL_STEPS}</div>
+          <h2 class="ob-title" id="ob-title">Use the views that answer real questions</h2>
+          <p class="ob-copy">The top navigation is not just decoration. Each view helps you validate the palette from a different angle before you export it.</p>
+          <div class="ob-card-list">
+            ${tools.map(([tool, icon, title, desc]) => `<button class="ob-card-item" style="text-align:left;font-family:inherit;cursor:pointer;" onclick="switchTool('${tool}');renderOnboarding();"><i>${icon}</i><div><strong>${title}${currentTool === tool ? ' · open now' : ''}</strong><span>${desc}</span></div></button>`).join('')}
+          </div>
+          <div class="ob-note"><strong>Recommended flow:</strong> pick colors in <strong>Colors</strong>, inspect relationships in <strong>Wheel</strong>, test usability in <strong>Preview</strong>, then confirm readability in <strong>Contrast</strong>.</div>
+        `;
+      }
+
+      return `
+        <div class="ob-step-icon">🚀</div>
+        <div class="ob-kicker">Step 5 of ${ONBOARDING_TOTAL_STEPS}</div>
+        <h2 class="ob-title" id="ob-title">Preview, then export</h2>
+        <p class="ob-copy">Once the palette feels right, open a live preview or copy the formats you need from the right panel. The app also remembers your latest setup automatically.</p>
+        <div class="ob-inline-actions">
+          <button class="ob-chip" onclick="switchTool('preview');renderOnboarding();">Open preview cards</button>
+          <button class="ob-chip" onclick="switchTool('contrast');renderOnboarding();">Open contrast check</button>
+        </div>
+        <div class="ob-card-list">
+          <div class="ob-card-item"><i>📋</i><div><strong>Quick exports</strong><span>Copy CSS variables, HEX, JSON, Tailwind, SCSS, OKLCH, Shadcn tokens, or Figma variables from the right panel.</span></div></div>
+          <div class="ob-card-item"><i>💾</i><div><strong>Automatic memory</strong><span>Your base color, harmony, count, and accessibility settings are saved locally so you can return where you left off.</span></div></div>
+          <div class="ob-card-item"><i>✅</i><div><strong>Best finish</strong><span>Try at least one preview and one contrast pass before you copy code into a real project.</span></div></div>
+        </div>
+        <div class="ob-note"><strong>You’re ready.</strong> Use <strong>Next</strong> to close this guide and continue exploring the live app.</div>
+      `;
+    }
+
+    function renderOnboarding() {
+      const overlay = document.getElementById('onboarding-overlay');
+      if (!overlay) return;
+
+      const body = document.getElementById('ob-body');
+      const dots = document.getElementById('ob-dots');
+      const progressFill = document.getElementById('ob-progress-fill');
+      const progressLabel = document.getElementById('ob-progress-label');
+      const backBtn = document.getElementById('ob-back-btn');
+      const nextBtn = document.getElementById('ob-next-btn');
+
+      body.innerHTML = getOnboardingStepMarkup(onboardingStep);
+      dots.innerHTML = Array.from({ length: ONBOARDING_TOTAL_STEPS }, (_, index) => {
+        const step = index + 1;
+        const cls = step === onboardingStep ? 'ob-dot active' : step < onboardingStep ? 'ob-dot done' : 'ob-dot';
+        return `<button class="${cls}" onclick="jumpOnboardingStep(${step})" aria-label="Go to step ${step}"></button>`;
+      }).join('');
+
+      progressFill.style.width = `${(onboardingStep / ONBOARDING_TOTAL_STEPS) * 100}%`;
+      progressLabel.textContent = `${onboardingStep} / ${ONBOARDING_TOTAL_STEPS}`;
+      backBtn.style.display = onboardingStep === 1 ? 'none' : 'inline-flex';
+      nextBtn.textContent = onboardingStep === ONBOARDING_TOTAL_STEPS ? 'Start exploring' : 'Next';
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function openOnboarding(resetToStart = false) {
+      const overlay = document.getElementById('onboarding-overlay');
+      if (!overlay) return;
+      if (resetToStart) onboardingStep = 1;
+      overlay.classList.add('show');
+      document.body.classList.add('onboarding-open');
+      renderOnboarding();
+    }
+
+    function finishOnboarding(remember = true) {
+      const overlay = document.getElementById('onboarding-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('onboarding-open');
+      if (remember) localStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+    }
+
+    function changeOnboardingStep(delta) {
+      if (onboardingStep === ONBOARDING_TOTAL_STEPS && delta > 0) {
+        finishOnboarding(true);
+        return;
+      }
+      onboardingStep = Math.max(1, Math.min(ONBOARDING_TOTAL_STEPS, onboardingStep + delta));
+      renderOnboarding();
+    }
+
+    function jumpOnboardingStep(step) {
+      onboardingStep = Math.max(1, Math.min(ONBOARDING_TOTAL_STEPS, step));
+      renderOnboarding();
+    }
+
+    function onboardingAction(action) {
+      if (action === 'focus-colors') {
+        switchTool('colors');
+        renderOnboarding();
+        return;
+      }
+      if (action === 'randomize') {
+        randomize();
+        renderOnboarding();
+      }
+    }
 
     // ══ STORAGE & URL SYNC ══
     function persistState() {
@@ -705,6 +883,12 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
 
     // ══ KEYBOARD ══
     document.addEventListener('keydown', e => {
+      if (isOnboardingOpen()) {
+        if (e.key === 'Escape') finishOnboarding(true);
+        if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); changeOnboardingStep(1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); changeOnboardingStep(-1); }
+        return;
+      }
       if (e.target.tagName === 'INPUT') return;
       if (e.key === 'r' || e.key === 'R') randomize();
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
@@ -720,3 +904,10 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
     switchTool('colors');
     // Bind mobile drawer picker (runs after DOM is painted)
     _initMobPicker();
+    const onboardingOverlay = document.getElementById('onboarding-overlay');
+    if (onboardingOverlay) {
+      onboardingOverlay.addEventListener('click', (event) => {
+        if (event.target === onboardingOverlay) finishOnboarding(true);
+      });
+    }
+    if (!hasCompletedOnboarding()) openOnboarding(true);
