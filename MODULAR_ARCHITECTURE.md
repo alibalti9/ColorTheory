@@ -58,7 +58,7 @@ console.log(nameColor(adjustedColor)); // "Deep Orange"
 
 **Supported Harmonies:**
 - Monochromatic, Complementary, Analogous, Triadic
-- Split-Comp, Tetradic, Square, Custom
+- Split-Comp, Tetradic, Custom
 
 **Example:**
 ```javascript

@@ -7,7 +7,6 @@ export const HARMONIES = [
   'Triadic',
   'Split-Comp',
   'Tetradic',
-  'Square',
   'Custom',
 ];
 
@@ -81,17 +80,14 @@ export function generateHsl(baseHex, count, mode) {
       }
       break;
     }
-    case 'Tetradic':
-    case 'Square': {
+    case 'Tetradic': {
       const hues = [hue, hue + 90, hue + 180, hue + 270];
-      const satScale = mode === 'Square' ? 0.88 : 0.9;
-      const lightRange = mode === 'Square' ? [22, 82] : [24, 80];
       for (let index = 0; index < count; index++) {
         colors.push(
           hslToHex(
             hues[index % 4],
-            saturation * satScale,
-            lightnessRamp(index, count, lightRange[0], lightRange[1])
+            saturation * 0.9,
+            lightnessRamp(index, count, 24, 80)
           )
         );
       }
@@ -176,8 +172,7 @@ export function generateOklch(baseHex, count, mode) {
       }
       break;
     }
-    case 'Tetradic':
-    case 'Square': {
+    case 'Tetradic': {
       const hues = [baseHue, baseHue + 90, baseHue + 180, baseHue + 270];
       for (let index = 0; index < count; index++) {
         colors.push(

@@ -3,7 +3,7 @@
 
 export const HARMONY_MODES = [
   'Monochromatic', 'Complementary', 'Analogous', 'Triadic',
-  'Split-Comp', 'Tetradic', 'Square', 'Custom'
+  'Split-Comp', 'Tetradic', 'Custom'
 ];
 
 export const initialState = {

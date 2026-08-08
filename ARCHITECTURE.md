@@ -161,7 +161,6 @@ index.html
 - Triadic
 - Split-Complementary
 - Tetradic
-- Square
 - Custom
 
 **Algorithm Pattern:**

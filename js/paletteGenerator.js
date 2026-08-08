@@ -83,17 +83,6 @@ export function generatePalette(baseHex, colorCount, harmonyMode, options = {}) 
       break;
     }
 
-    case 'Square': {
-      const hues = [baseHue, baseHue + 90, baseHue + 180, baseHue + 270];
-      for (let i = 0; i < colorCount; i++) {
-        const hue = hues[i % 4];
-        const saturation = baseSaturation * 0.88;
-        const lightness = interpolateLightness(i, colorCount, 22, 82);
-        paletteColors.push(hslToHex(hue, saturation, lightness));
-      }
-      break;
-    }
-
     default: // Custom / Random
       paletteColors = [baseHex];
       for (let i = 1; i < colorCount; i++) {
@@ -119,7 +108,7 @@ export function generatePalette(baseHex, colorCount, harmonyMode, options = {}) 
 export function getRandomPalette() {
   const modes = [
     'Monochromatic', 'Complementary', 'Analogous', 'Triadic',
-    'Split-Comp', 'Tetradic', 'Square'
+    'Split-Comp', 'Tetradic'
   ];
 
   const randomHue = Math.random() * 360;

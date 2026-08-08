@@ -21,9 +21,11 @@ export function renderColorWheel(canvas, palette) {
     const gradient = context.createRadialGradient(
       centerX, centerY, innerRadius, centerX, centerY, outerRadius
     );
-    gradient.addColorStop(0, hslToHex(hue, 100, 62));
-    gradient.addColorStop(0.5, hslToHex(hue, 100, 44));
-    gradient.addColorStop(1, hslToHex(hue, 90, 18));
+    // Gradient from 0% saturation (center) to 100% saturation (edge)
+    // Keep lightness constant at 50% for accurate color representation
+    gradient.addColorStop(0, hslToHex(hue, 0, 50));
+    gradient.addColorStop(0.5, hslToHex(hue, 50, 50));
+    gradient.addColorStop(1, hslToHex(hue, 100, 50));
     context.beginPath();
     context.moveTo(centerX, centerY);
     context.arc(centerX, centerY, outerRadius, angleStart, angleEnd);
@@ -56,10 +58,10 @@ export function renderColorWheel(canvas, palette) {
     centerY,
     innerRadius
   );
-  innerGradient.addColorStop(0, 'rgba(255,255,255,.96)');
-  innerGradient.addColorStop(0.4, 'rgba(210,90,70,.72)');
-  innerGradient.addColorStop(0.72, 'rgba(110,15,15,.88)');
-  innerGradient.addColorStop(1, 'rgba(20,2,2,.97)');
+  // Grey gradient representing 0% saturation
+  innerGradient.addColorStop(0, '#e0e0e0');
+  innerGradient.addColorStop(0.5, '#b0b0b0');
+  innerGradient.addColorStop(1, '#808080');
   context.beginPath();
   context.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
   context.fillStyle = innerGradient;
@@ -67,7 +69,8 @@ export function renderColorWheel(canvas, palette) {
 
   palette.forEach((color, index) => {
     const [hue, saturation] = hexToHsl(color);
-    const radius = innerRadius + (outerRadius - innerRadius) * (0.25 + saturation / 220);
+    // Map saturation (0-100) linearly to radius between innerRadius and outerRadius
+    const radius = innerRadius + (outerRadius - innerRadius) * (saturation / 100);
     const angle = (hue / 360) * Math.PI * 2 - Math.PI / 2;
     const pointX = centerX + radius * Math.cos(angle);
     const pointY = centerY + radius * Math.sin(angle);

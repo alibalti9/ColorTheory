@@ -1,5 +1,5 @@
 // ══ STATE ══
-    const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
+    const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Custom'];
 
     // Harmonies with a fixed color structure — count is determined by the harmony, not the user.
     // Monochromatic and Analogous are free-count (ramps/fans). Custom manages its own points.
@@ -8,7 +8,12 @@
       'Triadic':       3,
       'Split-Comp':    3,
       'Tetradic':      4,
-      'Square':        4,
+    };
+
+    // Store user's preferred count for adjustable harmonies (Analogous, Monochromatic)
+    const HARMONY_COUNT_MEMORY = {
+      'Analogous': 5,
+      'Monochromatic': 5,
     };
 
     // Returns true when the count stepper should be locked for the current harmony.
@@ -30,7 +35,6 @@
           'Triadic':       'Colorful',
           'Split-Comp':    'Balanced',
           'Tetradic':      'Rich Mix',
-          'Square':        'Structured',
           'Custom':        'Freeform',
         },
         colorsLabel:    'Colors',
@@ -57,7 +61,6 @@
           'Triadic':       'Triadic',
           'Split-Comp':    'Split-Comp',
           'Tetradic':      'Tetradic',
-          'Square':        'Square',
           'Custom':        'Custom',
         },
         colorsLabel:    'Colors',
@@ -241,7 +244,6 @@
         case 'Triadic':       offsets = [120, 240]; break;
         case 'Split-Comp':    offsets = [150, 210]; break;
         case 'Tetradic':      offsets = [90, 180, 270]; break;
-        case 'Square':        offsets = [90, 180, 270]; break;
         case 'Monochromatic': offsets = []; break;
         default:              offsets = [180]; break;
       }
@@ -304,11 +306,26 @@
     function undo() { if (histIdx > 0) { histIdx--; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; state.palette = generate(s.base, s.count, s.harmony); render(); } }
     function redo() { if (histIdx < hist.length - 1) { histIdx++; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; state.palette = generate(s.base, s.count, s.harmony); render(); } }
     function setBase(hex) { if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return; pushHist(); state.base = hex; if (state.harmony === 'Custom' && state.customColors) state.customColors[0] = hex; state.palette = generate(state.base, state.count, state.harmony); render(); }
-    function setCount(n) { pushHist(); state.count = n; state.palette = generate(state.base, state.count, state.harmony); render(); }
+    function setCount(n) { 
+      pushHist(); 
+      state.count = n; 
+      // Update memory for adjustable harmonies
+      if (state.harmony === 'Analogous' || state.harmony === 'Monochromatic') {
+        HARMONY_COUNT_MEMORY[state.harmony] = n;
+      }
+      state.palette = generate(state.base, state.count, state.harmony); 
+      render(); 
+    }
     function setHarmony(h) {
       pushHist();
       const wasCustom = state.harmony === 'Custom';
       const isCustom = h === 'Custom';
+      
+      // Save current count when leaving an adjustable harmony
+      if (state.harmony === 'Analogous' || state.harmony === 'Monochromatic') {
+        HARMONY_COUNT_MEMORY[state.harmony] = state.count;
+      }
+      
       state.harmony = h;
       if (isCustom && !wasCustom) {
         // Seed custom from current palette so transition feels smooth
@@ -317,10 +334,16 @@
         // Leaving custom — clear stored custom colors
         state.customColors = null;
       }
+      
+      // Restore saved count when switching to an adjustable harmony
+      if (h === 'Analogous' || h === 'Monochromatic') {
+        state.count = HARMONY_COUNT_MEMORY[h];
+      }
       // Snap count to the fixed amount when switching to a fixed-structure harmony
-      if (harmonyCountLocked(h)) {
+      else if (harmonyCountLocked(h)) {
         state.count = HARMONY_FIXED_COUNTS[h];
       }
+      
       state.palette = generate(state.base, state.count, state.harmony);
       render();
     }
@@ -329,7 +352,7 @@
       pushHist();
       const h = Math.random() * 360, s = 45 + Math.random() * 45, l = 30 + Math.random() * 35;
       state.base = hslToHex(h, s, l);
-      const newHarmony = HARMONIES[Math.floor(Math.random() * 7)]; // exclude Custom
+      const newHarmony = HARMONIES[Math.floor(Math.random() * 6)]; // exclude Custom
       state.harmony = newHarmony;
       state.customColors = null;
       state.count = [3, 4, 5, 6][Math.floor(Math.random() * 4)];
@@ -830,12 +853,13 @@
         ctx.fill();
       }
 
-      // ── Pass 2: saturation overlay — white at the center fading to transparent at the edge.
-      // This makes inner positions desaturated (white mixes in) and outer positions fully vivid.
+      // ── Pass 2: saturation overlay — gray at the center fading to transparent at the edge.
+      // This makes inner positions desaturated (gray mixes in) and outer positions fully vivid.
+      // Using gray (128,128,128) instead of white ensures lightness stays at 50% while saturation decreases.
       const satGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, oR);
-      satGrad.addColorStop(0,   'rgba(255,255,255,1)');   // centre = fully grey/white
-      satGrad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
-      satGrad.addColorStop(1,   'rgba(255,255,255,0)');   // edge   = full saturation
+      satGrad.addColorStop(0,   'rgba(128,128,128,1)');   // centre = fully gray (0% saturation)
+      satGrad.addColorStop(0.5, 'rgba(128,128,128,0.35)');
+      satGrad.addColorStop(1,   'rgba(128,128,128,0)');   // edge   = full saturation
       ctx.beginPath();
       ctx.arc(cx, cy, oR, 0, Math.PI * 2);
       ctx.fillStyle = satGrad;

@@ -213,11 +213,11 @@ getContrastGrade(fg, bg, mode)              // Returns { level, value }
 autoFixContrastForColor(color, bg, target)  // Auto-adjust lightness
 ```
 
-### 🌈 **8 Harmony Modes**
+### 🌈 **7 Harmony Modes**
 ```javascript
 generatePalette(baseHex, count, harmonyMode)
 // Modes: Monochromatic, Complementary, Analogous, Triadic,
-//        Split-Comp, Tetradic, Square, Custom
+//        Split-Comp, Tetradic, Custom
 ```
 
 ### 💾 **Smart Persistence**
