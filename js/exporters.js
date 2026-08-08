@@ -141,7 +141,7 @@ export function exportAsFigmaVariablesJSON() {
   const payload = {
     variables: figmaVariables,
     meta: {
-      exportedFrom: 'ChromaStudio',
+      exportedFrom: 'kelyqo',
       exportedAt: new Date().toISOString(),
       harmony: state.harmony,
       baseColor: state.base

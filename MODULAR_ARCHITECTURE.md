@@ -1,11 +1,11 @@
-# ChromaStudio - Modular Architecture Guide
+# kelyqo - Modular Architecture Guide
 
-This document explains the modular structure of ChromaStudio, designed for maintainability and extensibility.
+This document explains the modular structure of kelyqo, designed for maintainability and extensibility.
 
 ## Directory Structure
 
 ```
-ChromaStudio/
+kelyqo/
 ├── index.html                 # Main HTML (updated for modular imports)
 ├── script.js                  # Legacy main script (can be replaced)
 ├── styles.css                 # All styling

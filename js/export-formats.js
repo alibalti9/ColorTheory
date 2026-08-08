@@ -104,7 +104,7 @@ export function exportShadcn(state) {
 export function exportFigmaVariables(state) {
   const collections = [
     {
-      name: 'ChromaStudio',
+      name: 'kelyqo',
       modes: [{ name: 'Default', variables: [] }],
     },
   ];

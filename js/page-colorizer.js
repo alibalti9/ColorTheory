@@ -1,10 +1,10 @@
 /**
- * ChromaStudio – Page Colorizer Engine
+ * kelyqo – Page Colorizer Engine
  * Multi-color live-edit system with contextual click-to-recolor toolbar.
  *
  * Public API (window.PageColorizer):
  *   PageColorizer.init(containerEl)        – activate on a container
- *   PageColorizer.syncPalette(hexArray)    – push new palette from ChromaStudio
+ *   PageColorizer.syncPalette(hexArray)    – push new palette from kelyqo
  *   PageColorizer.destroy()               – remove all listeners and UI
  *   PageColorizer.undo() / .redo()        – local history
  *   PageColorizer.isActive()

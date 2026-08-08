@@ -2,9 +2,12 @@
     const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
     let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', colorBlindMode: 'none' };
     let hist = [], histIdx = -1, currentTool = 'colors';
-    const ONBOARDING_STORAGE_KEY = 'chromaStudio_onboarded_v1';
+    const ONBOARDING_STORAGE_KEY = 'kelyqo_onboarded_v1';
     const ONBOARDING_TOTAL_STEPS = 5;
+    const APP_STATE_STORAGE_KEY = 'kelyqo_state';
     let onboardingStep = 1;
+    const buttonClickSound = new Audio('click.wav');
+    buttonClickSound.preload = 'auto';
 
     // ══ COLOR MATH ══
     function hexToHsl(hex) {
@@ -186,7 +189,7 @@
           <div class="ob-step-icon">🎨</div>
           <div class="ob-kicker">Step 1 of ${ONBOARDING_TOTAL_STEPS}</div>
           <h2 class="ob-title" id="ob-title">Build a palette in a few clicks</h2>
-          <p class="ob-copy">ChromaStudio starts from one base color, generates a matching palette, and lets you preview or export the result without leaving the page.</p>
+          <p class="ob-copy">kelyqo starts from one base color, generates a matching palette, and lets you preview or export the result without leaving the page.</p>
           <div class="ob-card-list">
             <div class="ob-card-item"><i>🖍️</i><div><strong>Pick a starting color</strong><span>Use the base swatch or type a hex code to define the palette direction.</span></div></div>
             <div class="ob-card-item"><i>🔮</i><div><strong>Choose a harmony</strong><span>Switch between calm, bold, or playful color relationships from the context bar.</span></div></div>
@@ -297,7 +300,7 @@
 
       progressFill.style.width = `${(onboardingStep / ONBOARDING_TOTAL_STEPS) * 100}%`;
       progressLabel.textContent = `${onboardingStep} / ${ONBOARDING_TOTAL_STEPS}`;
-      backBtn.style.display = onboardingStep === 1 ? 'none' : 'inline-flex';
+      backBtn.style.visibility = onboardingStep === 1 ? 'hidden' : 'visible';
       nextBtn.textContent = onboardingStep === ONBOARDING_TOTAL_STEPS ? 'Start exploring' : 'Next';
       overlay.setAttribute('aria-hidden', 'false');
     }
@@ -349,12 +352,12 @@
     // ══ STORAGE & URL SYNC ══
     function persistState() {
       const cacheState = { base: state.base, count: state.count, harmony: state.harmony, contrastMode: state.contrastMode, colorBlindMode: state.colorBlindMode };
-      localStorage.setItem('chromaStudio_state', JSON.stringify(cacheState));
+      localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(cacheState));
     }
 
     function loadFromStorage() {
       try {
-        const cached = localStorage.getItem('chromaStudio_state');
+        const cached = localStorage.getItem(APP_STATE_STORAGE_KEY);
         if (cached) {
           const cached_state = JSON.parse(cached);
           state.base = cached_state.base || state.base;
@@ -655,7 +658,7 @@ footer{padding:26px 48px;border-top:1px solid rgba(255,255,255,.06);text-align:c
   <div class="feat"><div class="feat-ico">♿</div><h3>Accessible by Default</h3><p>WCAG 2.1 and APCA contrast checking built in so every palette ships accessibility-ready.</p></div>
 </div>
 <div id="stats" class="stats">
-  <div class="stat"><h2>10K+</h2><p>Designers using ChromaStudio</p></div>
+  <div class="stat"><h2>10K+</h2><p>Designers using kelyqo</p></div>
   <div class="stat"><h2>50+</h2><p>Color harmony modes</p></div>
   <div class="stat"><h2>99%</h2><p>Customer satisfaction</p></div>
 </div>
@@ -667,7 +670,7 @@ footer{padding:26px 48px;border-top:1px solid rgba(255,255,255,.06);text-align:c
     <button class="email-btn" onclick="subEmail()">Get Early Access</button>
   </div>
 </div>
-<footer>© 2025 ChromaStudio · Built with your palette</footer>
+<footer>© 2025 kelyqo · Built with your palette</footer>
 <div id="toast-msg"></div>
 <script>
 function showT(msg){const t=document.getElementById('toast-msg');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -876,7 +879,7 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
 
     function exportFigmaVariables() {
       const figmaVars = state.palette.map((c, i) => { const rgb = hexToRgbNormalized(c); return { name: `Color/${i + 1}`, type: 'COLOR', value: rgb }; });
-      const payload = { variables: figmaVars, meta: { exportedFrom: 'ChromaStudio', exportedAt: new Date().toISOString(), harmony: state.harmony, baseColor: state.base } };
+      const payload = { variables: figmaVars, meta: { exportedFrom: 'kelyqo', exportedAt: new Date().toISOString(), harmony: state.harmony, baseColor: state.base } };
       copyText(JSON.stringify(payload, null, 2));
       showToast('Figma variables JSON copied');
     }
@@ -893,6 +896,15 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
       if (e.key === 'r' || e.key === 'R') randomize();
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+    });
+
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button || button.disabled) return;
+
+      const clickInstance = buttonClickSound.cloneNode();
+      clickInstance.volume = 0.55;
+      clickInstance.play().catch(() => { });
     });
 
     // ══ INIT ══

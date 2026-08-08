@@ -120,12 +120,12 @@ export function persistStateToLocalStorage() {
     interpolationEnd: currentState.interpolationEnd,
     interpolationSteps: currentState.interpolationSteps
   };
-  localStorage.setItem('chromaStudio_state', JSON.stringify(cacheData));
+  localStorage.setItem('kelyqo_state', JSON.stringify(cacheData));
 }
 
 export function loadStateFromLocalStorage() {
   try {
-    const cached = localStorage.getItem('chromaStudio_state');
+    const cached = localStorage.getItem('kelyqo_state');
     if (cached) {
       const cachedState = JSON.parse(cached);
       currentState.base = cachedState.base || currentState.base;

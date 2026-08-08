@@ -79,22 +79,31 @@
     .logo {
       font-weight: 700;
       font-size: 14px;
-      letter-spacing: .9px;
+      letter-spacing: .2px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       padding-right: 16px;
       border-right: 1px solid var(--border);
       margin-right: 4px;
       flex-shrink: 0;
     }
 
-    .logo-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #7c6aff, #00c8f0);
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      border-radius: 8px;
       flex-shrink: 0;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .22);
+    }
+
+    .logo-wordmark {
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: lowercase;
+      letter-spacing: .35px;
+      color: var(--text);
     }
 
     .top-nav {
@@ -1736,6 +1745,7 @@
 
     .ob-btn-secondary {
       color: var(--text2);
+      
       background: rgba(255, 255, 255, .04);
       border-color: rgba(255, 255, 255, .12);
     }

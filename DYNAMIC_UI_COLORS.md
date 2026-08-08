@@ -2,7 +2,7 @@
 
 ## Overview
 
-Instead of using fixed hardcoded color variables (like `n`, `o`, `i`), ChromaStudio now **intelligently extracts** the best colors directly from your generated palette. This guarantees that no matter what random colors are generated, the landing page and dashboard always look beautifully balanced.
+Instead of using fixed hardcoded color variables (like `n`, `o`, `i`), kelyqo now **intelligently extracts** the best colors directly from your generated palette. This guarantees that no matter what random colors are generated, the landing page and dashboard always look beautifully balanced.
 
 ## How It Works
 

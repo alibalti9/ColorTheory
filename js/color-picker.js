@@ -1,5 +1,5 @@
 /**
- * ChromaStudio – Custom Color Picker
+ * kelyqo – Custom Color Picker
  * Replaces <input type="color"> with a high-performance, fully-accessible panel.
  *
  * Public API (attached to window.ChromaPicker):

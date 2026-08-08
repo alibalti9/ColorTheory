@@ -1,4 +1,4 @@
-// ══ CHROMASTUDIO - MAIN APPLICATION ══
+// ══ KELYQO - MAIN APPLICATION ══
 // Entry point that orchestrates all modules
 
 import * as StateManager from './js/stateManager.js';

@@ -1,4 +1,4 @@
-# ChromaStudio: Clean ES6 Module Architecture
+# kelyqo: Clean ES6 Module Architecture
 
 ## System Architecture Diagram
 
@@ -7,6 +7,7 @@
 │                   index.html (Entry Point)                   │
 │                                                               │
 │  <script type="module" src="js/app.js"></script>             │
+│  <script src="js/color-picker.js"></script>  (IIFE, global)  │
 └───────────────────────┬──────────────────────────────────────┘
                         │
                         ▼
@@ -14,23 +15,23 @@
         │      app.js (Orchestrator)         │
         │                                   │
         │  - setBase()      - render()      │
-        │  - setHarmony()   - undo()/redo()│
-        │  - randomize()    - switchTool() │
-        │  - All public API                │
+        │  - setHarmony()   - undo()/redo() │
+        │  - randomize()    - switchTool()  │
+        │  - All public API                 │
         └───────┬───────────────────────────┘
                 │
     ┌───────────┼───────────┬──────────────┬──────────────┐
     │           │           │              │              │
     ▼           ▼           ▼              ▼              ▼
 ┌─────────┐ ┌──────────┐ ┌────────────┐ ┌─────────────┐ ┌──────────┐
-│ State   │ │ Palette  │ │ Color      │ │ Contrast   │ │ UI       │
-│ Manager │ │Generator │ │ Math       │ │ Engine     │ │ Renderer │
-│         │ │          │ │            │ │            │ │          │
-│ - get() │ │ - gener- │ │ - hexTo    │ │ - wcag()   │ │ - render │
-│ - set() │ │   ate()  │ │   Rgb()    │ │ - apca()   │ │   Cards()│
-│ - save()│ │ - random │ │ - hexTo    │ │ - getGrade │ │ - render │
-│ - sync()│ │   ize()  │ │   Hsl()    │ │ - autoFix()│ │   Wheel()│
-│ - undo()│ │          │ │ - nameColor│ │            │ │ - toast()│
+│ State   │ │ Palette  │ │ Color      │ │ Contrast    │ │ UI       │
+│ Manager │ │Generator │ │ Math       │ │ Engine      │ │ Renderer │
+│         │ │          │ │            │ │             │ │          │
+│ - get() │ │ - gener- │ │ - hexTo    │ │ - wcag()    │ │ - render │
+│ - set() │ │   ate()  │ │   Rgb()    │ │ - apca()    │ │   Cards()│
+│ - save()│ │ - random │ │ - hexTo    │ │ - getGrade()│ │ - render │
+│ - sync()│ │   ize()  │ │   Hsl()    │ │ - autoFix() │ │   Bar()  │
+│ - undo()│ │          │ │ - nameColor│ │             │ │ - toast()│
 └─────────┘ └──────────┘ └────────────┘ └─────────────┘ └──────────┘
     │           │           │              │              │
     │           │           └──────────────┼──────────────┘
@@ -42,10 +43,21 @@
 │ UI Color         │                 │ Canvas           │  │ Exporters    │
 │ Extractor        │                 │ Visualizations   │  │              │
 │                  │                 │                  │  │ - exportCSS()│
-│ - extract()      │                 │ - wheel          │  │ - exportJSON │
-│ - apply()        │                 │ - cube           │  │ - exportShadcn
-│ - getContrasts() │                 │                  │  │ - exportFigma│
+│ - extract()      │                 │ - canvas-wheel   │  │ - exportHex()│
+│ - apply()        │                 │ - canvas-cube    │  │ - exportJSON │
+│ - getContrasts() │                 │                  │  │ - exportShadcn│
 └──────────────────┘                 └──────────────────┘  └──────────────┘
+
+  ┌─────────────────────┐   ┌──────────────────────┐
+  │ ChromaPicker        │   │ Palette Interpolation│
+  │ (color-picker.js)   │   │ (paletteInterpolation│
+  │                     │   │  .js)                │
+  │ - open()            │   │                      │
+  │ - close()           │   │ - generateInterp-    │
+  │ - initTrigger()     │   │   olationRamp()      │
+  │ - bindAll()         │   │                      │
+  │ window.ChromaPicker │   └──────────────────────┘
+  └─────────────────────┘
 ```
 
 ## Module Dependency Graph
@@ -53,31 +65,42 @@
 ```
 index.html
    │
-   └─> app.js (Main Entry)
+   ├─> color-picker.js (IIFE — loaded as classic script, no imports)
+   │    └─ exposes: window.ChromaPicker
+   │
+   └─> app.js (Main Entry, ES6 module)
         │
-        ├─ imports: StateManager
+        ├─ imports: StateManager       (stateManager.js)
         │            ├─ (no dependencies)
         │
-        ├─ imports: PaletteGenerator
-        │            ├─ imports: colorMath.js
-        │            │
+        ├─ imports: PaletteGenerator   (paletteGenerator.js)
+        │            └─ imports: colorMath.js
         │
-        ├─ imports: ColorMath
-        │            ├─ (no dependencies - pure functions)
+        ├─ imports: ColorMath          (colorMath.js)
+        │            └─ (no dependencies — pure functions)
         │
-        ├─ imports: ContrastEngine
-        │            ├─ imports: colorMath.js
+        ├─ imports: ContrastEngine     (contrastEngine.js)
+        │            └─ imports: colorMath.js
         │
-        ├─ imports: UIRenderer
+        ├─ imports: UIRenderer         (uiRenderer.js)
         │            ├─ imports: stateManager, colorMath
-        │            ├─ imports: contrastEngine
+        │            └─ imports: contrastEngine
         │
-        ├─ imports: UIColorExtractor
-        │            ├─ imports: colorMath, contrastEngine
+        ├─ imports: UIColorExtractor   (uiColorExtractor.js)
+        │            └─ imports: colorMath, contrastEngine
         │
-        └─ imports: Exporters
-                     ├─ imports: stateManager, colorMath
-                     ├─ imports: contrastEngine
+        ├─ imports: Exporters          (exporters.js)
+        │            ├─ imports: stateManager, colorMath
+        │            └─ imports: contrastEngine
+        │
+        ├─ imports: generateInterpolationRamp  (paletteInterpolation.js)
+        │            └─ imports: colorMath.js
+        │
+        ├─ imports: canvas-cube.js
+        │            └─ (standalone WebGL/canvas — no app dependencies)
+        │
+        └─ imports: preview-templates.js
+                     └─ (HTML template strings — no app dependencies)
 ```
 
 ## Module Responsibilities
@@ -93,12 +116,17 @@ index.html
 **Pure Data Layer:**
 ```javascript
 {
-  base: '#AA3939',           // Base color
-  count: 5,                  // Palette size
-  harmony: 'Complementary',  // Algorithm
-  palette: [],               // Generated colors
-  contrastMode: 'wcag',      // WCAG vs APCA
-  colorBlindMode: 'none'     // Simulation
+  base: '#AA3939',              // Base color
+  count: 5,                     // Palette size
+  harmony: 'Complementary',     // Algorithm
+  palette: [],                  // Generated colors
+  contrastMode: 'wcag',         // 'wcag' | 'apca'
+  colorBlindMode: 'none',       // Simulation mode
+  lockedSlots: [],              // Indices of locked palette slots
+  lockedColors: [],             // Hex values for locked slots
+  interpolationStart: '#000000',// Gradient ramp start
+  interpolationEnd: '#FFFFFF',  // Gradient ramp end
+  interpolationSteps: 5         // Number of ramp steps
 }
 ```
 
@@ -223,6 +251,7 @@ export function renderColorCards() {
 
 **Export Formats:**
 - CSS Variables (`:root { --color-1: ... }`)
+- Hex List (plain `#RRGGBB` lines)
 - JSON (Metadata + color data)
 - Tailwind Config (JavaScript module)
 - SCSS Variables
@@ -274,7 +303,69 @@ if (document.readyState === 'loading') {
 
 ---
 
-## Code Quality Standards
+### 🎨 **color-picker.js** — Custom Color Picker (ChromaPicker)
+**Single Responsibility:** Replace `<input type="color">` with a fully-accessible, high-performance color picker panel
+
+This module is an **IIFE** (Immediately Invoked Function Expression) loaded as a classic `<script>` tag — not an ES6 module. It attaches itself to `window.ChromaPicker` and has no external dependencies.
+
+**Public API (`window.ChromaPicker`):**
+- `open(triggerEl, initialHex, onChangeFn, onCommitFn?)` — Open the picker anchored to a trigger element
+- `close(commit?)` — Close; pass `false` to discard the current selection
+- `isOpen()` — Returns `true` if the picker panel is currently visible
+- `initTrigger(el, getHex, setHex)` — Wire any button as a picker trigger
+- `setFromHex(hex)` — Force the picker state to a given hex without reopening
+- `bindAll()` — Auto-wire every `[data-picker]` element in the document
+
+**UI Components:**
+- SV (Saturation/Value) canvas — drag to pick color within a hue
+- Hue rail — horizontal gradient slider for hue selection
+- Hex input — live typed entry with validation
+- HSL readout — real-time display of current H°, S%, L%
+- Preset swatches — 15 curated quick-pick colors
+- Cancel / Apply action buttons
+
+**Design:**
+- ✅ Self-contained color math (no dependency on colorMath.js)
+- ✅ Pointer events with `setPointerCapture` for smooth cross-device drag
+- ✅ Viewport-aware positioning (flips near screen edges)
+- ✅ Focus trap and keyboard navigation (Tab, Shift+Tab, Escape, Enter)
+- ✅ Returns focus to trigger element on close
+
+**Integration Example:**
+```javascript
+// Wire a swatch button after rendering it to the DOM
+const btn = document.querySelector('.ctx-cpick');
+ChromaPicker.initTrigger(
+  btn,
+  () => StateManager.getState().base,   // getter
+  (hex) => setBase(hex)                 // setter (live + commit)
+);
+```
+
+---
+
+### 〰️ **paletteInterpolation.js** — Stepped Gradient Ramp
+**Single Responsibility:** Generate a perceptually smooth color ramp between two hex endpoints
+
+**Exported Functions:**
+- `generateInterpolationRamp(startHex, endHex, steps)` — Returns an array of `steps` hex colors interpolated between start and end
+
+Used by the Gradients tool panel via `app.js`.
+
+---
+
+### 🖥️ **preview-templates.js** — Live UI Preview Templates
+**Single Responsibility:** Define and render live UI preview cards using the active palette
+
+**Exports:**
+- `PREVIEW_CARDS` — Array of preview type descriptors (`{ type, emoji, title, desc }`)
+- `openPreview(type, palette)` — Open a full-screen preview overlay for a given type
+
+Used by `renderPreviewPanel()` and `openPalettePreview()` in `app.js`.
+
+---
+
+
 
 ### ✅ Variable Naming Rules
 

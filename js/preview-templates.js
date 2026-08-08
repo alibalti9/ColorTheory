@@ -3,7 +3,7 @@ import { extractSemanticColors } from './palette-utils.js';
 const PREVIEW_SHELL = `<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ChromaStudio Preview</title>
+<title>kelyqo Preview</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -48,7 +48,7 @@ const TEMPLATES = {
 <nav><div class="logo">★ Brand</div><div class="links"><a href="#">Product</a><a href="#">Pricing</a><a href="#">Docs</a></div><button class="btn btn-primary">Get Started</button></nav>
 <section class="hero"><h1>Design with <span>Color</span><br>Build with Confidence</h1><p>Professional color studio powered by OKLCH design tokens and perceptual harmony.</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><button class="btn btn-primary">Start Free →</button><button class="btn btn-secondary">Watch Demo</button></div></section>
 <div class="grid"><div class="card"><h3>Smart Palettes</h3><p>Generate harmonious palettes using OKLCH perceptual color space.</p></div><div class="card"><h3>Instant Export</h3><p>Export to shadcn, Figma, Tailwind, and OKLCH CSS variables.</p></div><div class="card"><h3>Accessible</h3><p>WCAG 2.1 and APCA contrast checking built in.</p></div></div>
-<footer>© 2025 ChromaStudio · Built with your palette</footer>`,
+<footer>© 2025 kelyqo · Built with your palette</footer>`,
 
   dashboard: `
 <div class="layout-dashboard"><aside><div class="logo" style="padding:8px 10px 20px">◈ Dashboard</div><div class="item active">Overview</div><div class="item">Analytics</div><div class="item">Projects</div><div class="item">Settings</div></aside>
@@ -60,13 +60,13 @@ const TEMPLATES = {
 <nav><div class="logo">Alex Design</div><div class="links"><a href="#">Work</a><a href="#">About</a><a href="#">Contact</a></div></nav>
 <section class="hero" style="text-align:left;max-width:900px"><h1>I craft <span>beautiful</span> digital experiences</h1><p>Creative developer open to freelance — palette-driven design system.</p><button class="btn btn-primary">View My Work →</button></section>
 <div class="grid"><div class="card"><h3>Brand Identity</h3><p>Visual design & strategy</p></div><div class="card"><h3>Mobile App</h3><p>UI/UX design</p></div><div class="card"><h3>Web Platform</h3><p>Full-stack development</p></div></div>
-<footer>© 2025 Alex Design · ChromaStudio</footer>`,
+<footer>© 2025 Alex Design · kelyqo</footer>`,
 
   ecommerce: `
 <nav><div class="logo">✦ Shop</div><div class="links"><a href="#">Men</a><a href="#">Women</a><a href="#">Sale</a></div><button class="btn btn-primary">🛒 Cart</button></nav>
-<section class="hero"><h1>New Season,<br>New Colors</h1><p>Discover our latest collection inspired by your ChromaStudio palette.</p><button class="btn btn-primary">Shop Now →</button></section>
+<section class="hero"><h1>New Season,<br>New Colors</h1><p>Discover our latest collection inspired by your kelyqo palette.</p><button class="btn btn-primary">Shop Now →</button></section>
 <div class="product-grid"><div class="product"><div class="product-img"></div><div class="product-body"><strong>Palette Tee</strong><div class="price">$42</div></div></div><div class="product"><div class="product-img"></div><div class="product-body"><strong>Studio Mug</strong><div class="price">$28</div></div></div><div class="product"><div class="product-img"></div><div class="product-body"><strong>Color Book</strong><div class="price">$59</div></div></div></div>
-<footer>© 2025 Shop · ChromaStudio Demo</footer>`,
+<footer>© 2025 Shop · kelyqo Demo</footer>`,
 };
 
 function cssVariablesFromPalette(palette) {
@@ -105,7 +105,7 @@ export function openPreview(type, palette) {
   if (previewWindow) {
     // The host stays lightweight; the structural layout loads once in an iframe
     // and palette changes are raw CSS custom-property mutations, not HTML rebuilds.
-    previewWindow.document.write(`<!doctype html><html><head><title>ChromaStudio Preview</title><style>html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#111}</style></head><body><iframe id="preview-frame" title="${type} preview"></iframe></body></html>`);
+    previewWindow.document.write(`<!doctype html><html><head><title>kelyqo Preview</title><style>html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#111}</style></head><body><iframe id="preview-frame" title="${type} preview"></iframe></body></html>`);
     previewWindow.document.close();
     const frame = previewWindow.document.getElementById('preview-frame');
     frame.srcdoc = `${PREVIEW_SHELL}${template}</body></html>`;
@@ -121,7 +121,7 @@ export function openPreview(type, palette) {
       }
     };
     frame.addEventListener('load', applyTheme, { once: true });
-    previewWindow.chromaStudioApplyPalette = (nextPalette) => injectPreviewVariables(frame.contentDocument, nextPalette);
+    previewWindow.kelyqoApplyPalette = (nextPalette) => injectPreviewVariables(frame.contentDocument, nextPalette);
   }
   return previewWindow;
 }

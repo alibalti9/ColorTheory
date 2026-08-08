@@ -1,4 +1,4 @@
-# Quick Reference: ChromaStudio Module API
+# Quick Reference: kelyqo Module API
 
 ## Global Functions (Available in HTML)
 
