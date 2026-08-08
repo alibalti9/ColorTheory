@@ -1333,6 +1333,8 @@
       border-radius: 50%;
       max-width: 100%;
       touch-action: none; /* prevent scroll-jacking during drag */
+      /* Match the dark background so the 2px gap between drawn disc and canvas edge is invisible */
+      background: transparent;
     }
 
     #wheel-layout {

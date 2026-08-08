@@ -736,9 +736,16 @@
 
     let _wheelDrag = null; // active drag state
 
+    // Map saturation (0–100) linearly to a canvas radius (0 = center, oR = full sat).
+    // No inner-radius offset — the entire disc is used so the point sits exactly
+    // over the colour it represents.
     function _wheelPointRadius(iR, oR, saturation) {
-      // Map saturation 0-100 to radial position between inner and outer radius
-      return iR + (oR - iR) * (0.18 + (saturation / 100) * 0.78);
+      return (saturation / 100) * oR;
+    }
+
+    // Inverse: canvas radius → saturation (0–100)
+    function _wheelRadiusToSat(dist, oR) {
+      return Math.max(0, Math.min(100, (dist / oR) * 100));
     }
 
     function _wheelHitTest(canvas, clientX, clientY, iR, oR) {
@@ -768,7 +775,10 @@
 
       const W = canvas.width, H = canvas.height;
       const cx = W / 2, cy = H / 2;
-      const oR = W / 2 - 4, iR = oR * 0.36;
+      // oR: usable disc radius. iR kept for API compatibility with existing helpers
+      // but the new wheel uses the full disc — no inner hub cutout.
+      const oR = W / 2 - 2;
+      const iR = 0; // unused by new drawing code; kept so _bindWheelEvents signature is stable
 
       // ── Draw wheel ──
       _drawWheelBase(canvas, cx, cy, oR, iR);
@@ -803,39 +813,40 @@
     function _drawWheelBase(canvas, cx, cy, oR, iR) {
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const SEG = 72;
 
-      // Hue ring
+      // ── Pass 1: hue ring — each angular segment is fully saturated at mid-lightness.
+      // We draw from center outward so the whole disc is coloured by hue at this stage.
+      const SEG = 360; // one segment per degree for smooth hue transitions
       for (let i = 0; i < SEG; i++) {
         const a0 = (i / SEG) * Math.PI * 2 - Math.PI / 2;
         const a1 = ((i + 1) / SEG) * Math.PI * 2 - Math.PI / 2;
         const hue = (i / SEG) * 360;
-        const g = ctx.createRadialGradient(cx, cy, iR, cx, cy, oR);
-        g.addColorStop(0, hslToHex(hue, 100, 62));
-        g.addColorStop(0.5, hslToHex(hue, 100, 44));
-        g.addColorStop(1, hslToHex(hue, 90, 18));
-        ctx.beginPath(); ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, oR, a0, a1); ctx.closePath();
-        ctx.fillStyle = g; ctx.fill();
-      }
-
-      // Segment dividers
-      for (let i = 0; i < SEG; i++) {
-        const a = (i / SEG) * Math.PI * 2 - Math.PI / 2;
         ctx.beginPath();
-        ctx.moveTo(cx + iR * Math.cos(a), cy + iR * Math.sin(a));
-        ctx.lineTo(cx + oR * Math.cos(a), cy + oR * Math.sin(a));
-        ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, oR, a0, a1);
+        ctx.closePath();
+        // Use L=50 so the hue reads as pure and vivid at full saturation
+        ctx.fillStyle = `hsl(${hue},100%,50%)`;
+        ctx.fill();
       }
 
-      // Inner hub
-      const ig = ctx.createRadialGradient(cx - iR * 0.25, cy - iR * 0.3, 0, cx, cy, iR);
-      ig.addColorStop(0, 'rgba(255,255,255,.96)');
-      ig.addColorStop(0.4, 'rgba(210,90,70,.72)');
-      ig.addColorStop(0.72, 'rgba(110,15,15,.88)');
-      ig.addColorStop(1, 'rgba(20,2,2,.97)');
-      ctx.beginPath(); ctx.arc(cx, cy, iR, 0, Math.PI * 2);
-      ctx.fillStyle = ig; ctx.fill();
+      // ── Pass 2: saturation overlay — white at the center fading to transparent at the edge.
+      // This makes inner positions desaturated (white mixes in) and outer positions fully vivid.
+      const satGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, oR);
+      satGrad.addColorStop(0,   'rgba(255,255,255,1)');   // centre = fully grey/white
+      satGrad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+      satGrad.addColorStop(1,   'rgba(255,255,255,0)');   // edge   = full saturation
+      ctx.beginPath();
+      ctx.arc(cx, cy, oR, 0, Math.PI * 2);
+      ctx.fillStyle = satGrad;
+      ctx.fill();
+
+      // ── Pass 3: thin dark edge ring to give the disc a clean boundary
+      ctx.beginPath();
+      ctx.arc(cx, cy, oR, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
     function _drawHarmonyLines(canvas, cx, cy, oR, iR) {
@@ -951,9 +962,9 @@
 
         // Current angle from center
         const currentAngle = Math.atan2(my, mx);
-        // Current radius → saturation
+        // Current radius → saturation using the clean linear mapping
         const dist = Math.hypot(mx, my);
-        const saturation = Math.max(5, Math.min(100, ((dist - iR) / (oR - iR) - 0.18) / 0.78 * 100));
+        const saturation = _wheelRadiusToSat(dist, oR);
 
         // New hue from current angle
         const newHue = (((currentAngle + Math.PI / 2) / (Math.PI * 2)) * 360 + 360) % 360;
