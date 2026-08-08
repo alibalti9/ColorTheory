@@ -23,6 +23,7 @@
     let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', customColors: null };
     let hist = [], histIdx = -1, currentTool = 'colors';
     let uiMode = 'simple'; // 'simple' | 'dev'
+    let customBaseIndex = 0; // Track which custom color index is currently the base (for Custom mode)
 
     // ── Terminology maps ──
     const TERM = {
@@ -48,7 +49,7 @@
           { fn: 'exportJSON', label: 'Copy as Data File' },
         ],
         cardSubLines:   false,  // hide rgb/hsl lines
-        wheelHint:      'Drag dots to change colors · left–right = hue · in–out = strength',
+        wheelHint:      'Drag dots to change colors · click any dot to make it Base · left–right = hue · in–out = strength',
         satLabel:       'Color Strength',
         autoFix:        'Fix readability',
       },
@@ -79,7 +80,7 @@
           { fn: 'exportFigmaVariables', label: 'Figma JSON' },
         ],
         cardSubLines:   true,
-        wheelHint:      'Drag points · angle = hue · distance = saturation',
+        wheelHint:      'Drag points · click any point to make it Base · angle = hue · distance = saturation',
         satLabel:       'Saturation',
         autoFix:        'Auto-Fix',
       },
@@ -266,17 +267,29 @@
 
     // ── Custom palette helpers ──
     function generateCustom(base, count) {
-      // If we already have a custom palette with the right count, just ensure index 0 = base
+      // If we already have a custom palette with the right count
       if (state.customColors && state.customColors.length > 0) {
         const existing = [...state.customColors];
-        existing[0] = base; // always keep base exact
+        // Only update the base at its current index if this is not an initial switch
+        if (customBaseIndex < existing.length && state.palette.length > 0) {
+          existing[customBaseIndex] = base;
+        }
         // Grow: add random colors
         while (existing.length < count) {
           existing.push(hslToHex(Math.random() * 360, 42 + Math.random() * 44, 28 + Math.random() * 48));
         }
-        // Shrink: remove from the end (never remove base)
-        state.customColors = existing.slice(0, count);
-        return [...state.customColors];
+        // Shrink: remove from the end (but keep base if possible)
+        if (existing.length > count && customBaseIndex >= count) {
+          // If shrinking would remove base, move base to safe position
+          const baseColor = existing[customBaseIndex];
+          existing = existing.slice(0, count);
+          existing[count - 1] = baseColor;
+          customBaseIndex = count - 1;
+        } else {
+          existing = existing.slice(0, count);
+        }
+        state.customColors = existing;
+        return [...existing];
       }
       // Fresh custom palette: base + random
       const colors = [base];
@@ -284,12 +297,14 @@
         colors.push(hslToHex(Math.random() * 360, 42 + Math.random() * 44, 28 + Math.random() * 48));
       }
       state.customColors = [...colors];
+      customBaseIndex = 0; // Reset to first color for fresh palette
       return colors;
     }
 
     function seedCustomColors() {
       // Seed custom colors from current palette (called when first switching to Custom)
       state.customColors = [...state.palette];
+      customBaseIndex = 0; // Start with first color as base
     }
 
     function randomizeCustomColors() {
@@ -302,10 +317,26 @@
     }
 
     function applyState(s) { state = { ...s }; state.palette = generate(s.base, s.count, s.harmony); render(); }
-    function pushHist() { const snap = { base: state.base, count: state.count, harmony: state.harmony, customColors: state.customColors ? [...state.customColors] : null }; hist = hist.slice(0, histIdx + 1); hist.push(snap); histIdx = hist.length - 1; }
-    function undo() { if (histIdx > 0) { histIdx--; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; state.palette = generate(s.base, s.count, s.harmony); render(); } }
-    function redo() { if (histIdx < hist.length - 1) { histIdx++; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; state.palette = generate(s.base, s.count, s.harmony); render(); } }
-    function setBase(hex) { if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return; pushHist(); state.base = hex; if (state.harmony === 'Custom' && state.customColors) state.customColors[0] = hex; state.palette = generate(state.base, state.count, state.harmony); render(); }
+    function pushHist() { const snap = { base: state.base, count: state.count, harmony: state.harmony, customColors: state.customColors ? [...state.customColors] : null, customBaseIndex: customBaseIndex }; hist = hist.slice(0, histIdx + 1); hist.push(snap); histIdx = hist.length - 1; }
+    function undo() { if (histIdx > 0) { histIdx--; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; customBaseIndex = s.customBaseIndex !== undefined ? s.customBaseIndex : 0; state.palette = generate(s.base, s.count, s.harmony); render(); } }
+    function redo() { if (histIdx < hist.length - 1) { histIdx++; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; customBaseIndex = s.customBaseIndex !== undefined ? s.customBaseIndex : 0; state.palette = generate(s.base, s.count, s.harmony); render(); } }
+    function setBase(hex) { 
+      if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return; 
+      pushHist(); 
+      state.base = hex; 
+      if (state.harmony === 'Custom') {
+        // Update the selected custom color directly
+        state.palette = [...state.palette];
+        state.palette[customBaseIndex] = hex;
+        if (state.customColors) {
+          state.customColors = [...state.customColors];
+          state.customColors[customBaseIndex] = hex;
+        }
+      } else {
+        state.palette = generate(state.base, state.count, state.harmony);
+      }
+      render(); 
+    }
     function setCount(n) { 
       pushHist(); 
       state.count = n; 
@@ -330,9 +361,11 @@
       if (isCustom && !wasCustom) {
         // Seed custom from current palette so transition feels smooth
         seedCustomColors();
-      } else if (!isCustom) {
-        // Leaving custom — clear stored custom colors
+        customBaseIndex = 0; // Reset to first color when entering Custom mode
+      } else if (!isCustom && wasCustom) {
+        // Leaving custom — clear stored custom colors and reset base index
         state.customColors = null;
+        customBaseIndex = 0;
       }
       
       // Restore saved count when switching to an adjustable harmony
@@ -813,12 +846,13 @@
       _drawWheelPoints(canvas, cx, cy, oR, iR);
 
       // ── Side list & strip ──
+      const baseIdx = state.harmony === 'Custom' ? customBaseIndex : 0;
       document.getElementById('wheel-color-list').innerHTML = state.palette.map((c, i) => `
-        <div class="wci${i === 0 ? ' wci--base' : ''}" onclick="copyHex('${c}')">
+        <div class="wci${i === baseIdx ? ' wci--base' : ''}" onclick="copyHex('${c}')">
           <div class="wci-sw" style="background:${c}"></div>
           <div>
             <div class="wci-hex">${c.toUpperCase()}</div>
-            <div class="wci-name">${i === 0 ? '⬡ Base' : nameColor(c)}</div>
+            <div class="wci-name">${i === baseIdx ? '⬡ Base' : nameColor(c)}</div>
           </div>
         </div>`).join('');
 
@@ -888,12 +922,15 @@
       ctx.setLineDash([3, 5]);
       ctx.strokeStyle = 'rgba(255,255,255,0.18)';
       ctx.lineWidth = 1.2;
-      // Connect all points to base (index 0) only
-      for (let i = 1; i < pts.length; i++) {
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        ctx.lineTo(pts[i].x, pts[i].y);
-        ctx.stroke();
+      // Connect all points to base (index 0 for normal modes, customBaseIndex for Custom)
+      const baseIdx = state.harmony === 'Custom' ? customBaseIndex : 0;
+      for (let i = 0; i < pts.length; i++) {
+        if (i !== baseIdx) {
+          ctx.beginPath();
+          ctx.moveTo(pts[baseIdx].x, pts[baseIdx].y);
+          ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.stroke();
+        }
       }
       ctx.restore();
     }
@@ -901,6 +938,8 @@
     function _drawWheelPoints(canvas, cx, cy, oR, iR) {
       const ctx = canvas.getContext('2d');
       const draggingIdx = _wheelDrag ? _wheelDrag.idx : -1;
+      const isCustomMode = state.harmony === 'Custom';
+      const baseIdx = isCustomMode ? customBaseIndex : 0;
 
       state.palette.forEach((c, idx) => {
         const [h, s] = hexToHsl(c);
@@ -908,7 +947,7 @@
         const angle = (h / 360) * Math.PI * 2 - Math.PI / 2;
         const x = cx + rad * Math.cos(angle);
         const y = cy + rad * Math.sin(angle);
-        const isBase = idx === 0;
+        const isBase = idx === baseIdx;
         const isDragging = idx === draggingIdx;
         const r = isBase ? 13 : 10;
 
@@ -950,10 +989,15 @@
       if (canvas._wheelBound) return;
       canvas._wheelBound = true;
 
+      let _wheelClickStart = null; // Track click position for distinguishing click vs drag
+
       canvas.addEventListener('pointerdown', function(e) {
         e.preventDefault();
         const hitIdx = _wheelHitTest(canvas, e.clientX, e.clientY, iR, oR);
         if (hitIdx === -1) return;
+
+        // Track start position for click detection
+        _wheelClickStart = { x: e.clientX, y: e.clientY, idx: hitIdx };
 
         // Push history BEFORE drag begins (one undo entry per drag)
         pushHist();
@@ -1003,7 +1047,8 @@
             state.customColors = [...state.customColors];
             state.customColors[_wheelDrag.idx] = newColor;
           }
-          if (_wheelDrag.idx === 0) state.base = newColor;
+          // Update base if dragging the current base point
+          if (_wheelDrag.idx === customBaseIndex) state.base = newColor;
         } else {
           // Harmony drag: rotate entire group preserving hue spacing,
           // AND update every point's saturation by the same radial delta as the dragged point.
@@ -1018,7 +1063,7 @@
             const newS = Math.max(5, Math.min(100, s + satDelta));
             return hslToHex(newH, newS, l);
           });
-          // Update base to reflect index 0 after transformation
+          // Update base to reflect the base index after transformation
           state.base = state.palette[0];
         }
 
@@ -1033,7 +1078,24 @@
 
       canvas.addEventListener('pointerup', function(e) {
         if (!_wheelDrag) return;
+        
+        // Check if this was a click (not a drag) by measuring movement
+        const moveDist = _wheelClickStart ? 
+          Math.hypot(e.clientX - _wheelClickStart.x, e.clientY - _wheelClickStart.y) : 
+          Infinity;
+        
+        // If movement was minimal (< 5px), treat as click
+        if (moveDist < 5 && state.harmony === 'Custom' && _wheelClickStart) {
+          const clickedIdx = _wheelClickStart.idx;
+          if (clickedIdx !== customBaseIndex) {
+            // Change base selection in Custom mode
+            customBaseIndex = clickedIdx;
+            state.base = state.palette[clickedIdx];
+          }
+        }
+        
         _wheelDrag = null;
+        _wheelClickStart = null;
         canvas.style.cursor = 'default';
         // Full render to sync everything, including persisting state
         render();
@@ -1042,6 +1104,7 @@
       canvas.addEventListener('pointercancel', function() {
         if (!_wheelDrag) return;
         _wheelDrag = null;
+        _wheelClickStart = null;
         canvas.style.cursor = 'default';
         render();
       });
