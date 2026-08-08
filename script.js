@@ -1,7 +1,104 @@
 // ══ STATE ══
     const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
+
+    // Harmonies with a fixed color structure — count is determined by the harmony, not the user.
+    // Monochromatic and Analogous are free-count (ramps/fans). Custom manages its own points.
+    const HARMONY_FIXED_COUNTS = {
+      'Complementary': 2,
+      'Triadic':       3,
+      'Split-Comp':    3,
+      'Tetradic':      4,
+      'Square':        4,
+    };
+
+    // Returns true when the count stepper should be locked for the current harmony.
+    function harmonyCountLocked(harmony) {
+      return harmony !== 'Custom' && Object.prototype.hasOwnProperty.call(HARMONY_FIXED_COUNTS, harmony);
+    }
     let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', customColors: null };
     let hist = [], histIdx = -1, currentTool = 'colors';
+    let uiMode = 'simple'; // 'simple' | 'dev'
+
+    // ── Terminology maps ──
+    const TERM = {
+      simple: {
+        harmony:        'Color Style',
+        harmonies: {
+          'Monochromatic': 'One Tone',
+          'Complementary': 'Bold Contrast',
+          'Analogous':     'Soft Blend',
+          'Triadic':       'Colorful',
+          'Split-Comp':    'Balanced',
+          'Tetradic':      'Rich Mix',
+          'Square':        'Structured',
+          'Custom':        'Freeform',
+        },
+        colorsLabel:    'Colors',
+        contrastPanel:  'Readability Check',
+        contrastMode:   { wcag: 'Standard', apca: 'Advanced' },
+        gradeLabels:    { 'AAA': '✓ Great', 'AA': '✓ Good', 'AA Lg': '~ Large only', 'Fail': '✗ Too low' },
+        exportTitle:    'Save & Share',
+        exports: [
+          { fn: 'exportHex',  label: 'Copy Color Codes' },
+          { fn: 'exportCSS',  label: 'Copy for Website' },
+          { fn: 'exportJSON', label: 'Copy as Data File' },
+        ],
+        cardSubLines:   false,  // hide rgb/hsl lines
+        wheelHint:      'Drag dots to change colors · left–right = hue · in–out = strength',
+        satLabel:       'Color Strength',
+        autoFix:        'Fix readability',
+      },
+      dev: {
+        harmony:        'Harmony',
+        harmonies: {
+          'Monochromatic': 'Monochromatic',
+          'Complementary': 'Complementary',
+          'Analogous':     'Analogous',
+          'Triadic':       'Triadic',
+          'Split-Comp':    'Split-Comp',
+          'Tetradic':      'Tetradic',
+          'Square':        'Square',
+          'Custom':        'Custom',
+        },
+        colorsLabel:    'Colors',
+        contrastPanel:  'WCAG Contrast Ratios',
+        contrastMode:   { wcag: 'WCAG', apca: 'APCA' },
+        gradeLabels:    { 'AAA': 'AAA', 'AA': 'AA', 'AA Lg': 'AA Lg', 'Fail': 'Fail' },
+        exportTitle:    'Export',
+        exports: [
+          { fn: 'exportCSS',            label: 'CSS Variables' },
+          { fn: 'exportHex',            label: 'HEX List' },
+          { fn: 'exportJSON',           label: 'JSON' },
+          { fn: 'exportTailwind',       label: 'Tailwind' },
+          { fn: 'exportSCSS',           label: 'SCSS Vars' },
+          { fn: 'exportShadcn',         label: 'Shadcn HSL' },
+          { fn: 'exportOKLCH',          label: 'OKLCH' },
+          { fn: 'exportFigmaVariables', label: 'Figma JSON' },
+        ],
+        cardSubLines:   true,
+        wheelHint:      'Drag points · angle = hue · distance = saturation',
+        satLabel:       'Saturation',
+        autoFix:        'Auto-Fix',
+      },
+    };
+
+    function T(key) { return TERM[uiMode][key]; }
+    function TH(harmonyName) { return TERM[uiMode].harmonies[harmonyName] || harmonyName; }
+
+    function setUIMode(mode) {
+      uiMode = mode;
+      localStorage.setItem('kelyqo_uimode', mode);
+      document.body.dataset.uiMode = mode;
+      _renderModeToggle();
+      render();
+      if (currentTool === 'wheel') renderWheel();
+    }
+
+    function _renderModeToggle() {
+      // The toggle is part of the ctxbar — renderCtxBar() handles it.
+      // This function is kept for callers that need an explicit refresh.
+      renderCtxBar();
+    }
     const ONBOARDING_STORAGE_KEY = 'kelyqo_onboarded_v1';
     const ONBOARDING_TOTAL_STEPS = 5;
     const APP_STATE_STORAGE_KEY = 'kelyqo_state';
@@ -219,6 +316,10 @@
       } else if (!isCustom) {
         // Leaving custom — clear stored custom colors
         state.customColors = null;
+      }
+      // Snap count to the fixed amount when switching to a fixed-structure harmony
+      if (harmonyCountLocked(h)) {
+        state.count = HARMONY_FIXED_COUNTS[h];
       }
       state.palette = generate(state.base, state.count, state.harmony);
       render();
@@ -482,39 +583,83 @@
     }
     function renderRight() {
       document.getElementById('rp-dots').innerHTML = state.palette.map(c => `<div class="rp-dot" style="${swatchStyle(c)}" onclick="copyHex('${c}')" title="${c.toUpperCase()}"></div>`).join('');
-      document.getElementById('rp-harmony').textContent = state.harmony;
+      document.getElementById('rp-harmony').textContent = TH(state.harmony);
       document.getElementById('rp-count').textContent = state.count;
       document.getElementById('rp-base').textContent = state.base.toUpperCase();
+      // Update harmony row label
+      const harmonyKey = document.getElementById('rp-harmony-key');
+      if (harmonyKey) harmonyKey.textContent = uiMode === 'simple' ? 'Color Style' : 'Harmony';
+      // Re-render export buttons
+      const exportWrap = document.getElementById('rp-export-btns');
+      const exportTitle = document.getElementById('rp-export-title');
+      if (exportTitle) exportTitle.textContent = T('exportTitle');
+      if (exportWrap) {
+        exportWrap.innerHTML = T('exports').map(({ fn, label }) => `
+          <button class="rp-xbtn" onclick="${fn}()">${label}</button>`).join('');
+      }
     }
 
     // ══ CONTEXT BAR ══
     function renderCtxBar() {
       const cb = document.getElementById('ctxbar');
-      // Custom picker triggers: <button class="ctx-cpick"> with data-picker-id to re-bind after innerHTML swap
+      const isSimple = uiMode === 'simple';
+      const countLocked = harmonyCountLocked(state.harmony);
+
       let h = `<span class="ctx-lbl">${currentTool.toUpperCase()}</span>`;
+
+      // Base color picker + hex input
       h += `<button class="ctx-cpick" id="cpick-base" data-picker-id="base"
               style="background:${state.base}"
               aria-label="Pick base color (${state.base})"
               title="Base color ${state.base.toUpperCase()}"></button>`;
       h += `<input type="text" class="ctx-hex" value="${state.base.toUpperCase()}" oninput="onHexInput(this.value)" maxlength="7" placeholder="#RRGGBB">`;
       h += `<div class="ctx-sep"></div>`;
-      h += `<span class="ctx-lsm">Colors:</span>`;
-      h += `<div class="ctx-stepper"><button onclick="stepCount(-1)">−</button><span>${state.count}</span><button onclick="stepCount(1)">+</button></div>`;
-      h += `<div class="ctx-sep"></div>`;
-      HARMONIES.forEach(m => { h += `<button class="ctx-btn${state.harmony === m ? ' active' : ''}" onclick="setHarmony('${m}')">${m}</button>`; });
-      if (state.harmony === 'Custom') {
-        h += `<div class="ctx-sep"></div><button class="ctx-btn" onclick="randomizeCustom()">Randomize</button>`;
+
+      // Color count stepper — disabled when harmony has a fixed structure
+      h += `<span class="ctx-lsm${countLocked ? ' ctx-lsm--dim' : ''}">${T('colorsLabel')}:</span>`;
+      if (countLocked) {
+        h += `<div class="ctx-stepper ctx-stepper--locked" aria-disabled="true" title="Count is fixed for this harmony">
+                <button disabled tabindex="-1">−</button>
+                <span>${state.count}</span>
+                <button disabled tabindex="-1">+</button>
+              </div>`;
+      } else {
+        h += `<div class="ctx-stepper"><button onclick="stepCount(-1)">−</button><span>${state.count}</span><button onclick="stepCount(1)">+</button></div>`;
       }
-      if (currentTool === 'gradients') h += `<div class="ctx-sep"></div><button class="ctx-btn" onclick="copyAllGrads()">Copy All CSS</button>`;
+      h += `<div class="ctx-sep"></div>`;
+
+      // Harmony/Color-style buttons
+      HARMONIES.forEach(m => {
+        h += `<button class="ctx-btn${state.harmony === m ? ' active' : ''}" onclick="setHarmony('${m}')">${TH(m)}</button>`;
+      });
+
+      if (state.harmony === 'Custom') {
+        h += `<div class="ctx-sep"></div><button class="ctx-btn" onclick="randomizeCustom()">${isSimple ? 'Shuffle' : 'Randomize'}</button>`;
+      }
+      if (currentTool === 'gradients') {
+        h += `<div class="ctx-sep"></div><button class="ctx-btn" onclick="copyAllGrads()">${isSimple ? 'Copy All' : 'Copy All CSS'}</button>`;
+      }
       if (currentTool === 'contrast') {
         const pass = countPassingColors(state.palette, state.contrastMode);
-        h += `<div class="ctx-sep"></div><span class="ctx-lsm">AA Pass: <b style="color:${pass > 0 ? '#9a8dff' : '#ff6060'}">${pass}/${state.palette.length}</b></span>`;
-        h += `<button class="ctx-btn" onclick="autoFixPaletteContrast()">Auto-Fix</button>`;
-        h += `<button class="ctx-btn${state.contrastMode === 'wcag' ? ' active' : ''}" onclick="setContrastMode('wcag')">WCAG</button>`;
-        h += `<button class="ctx-btn${state.contrastMode === 'apca' ? ' active' : ''}" onclick="setContrastMode('apca')">APCA</button>`;
+        const passLabel = isSimple
+          ? `Readable: <b style="color:${pass > 0 ? '#9a8dff' : '#ff6060'}">${pass}/${state.palette.length}</b>`
+          : `AA Pass: <b style="color:${pass > 0 ? '#9a8dff' : '#ff6060'}">${pass}/${state.palette.length}</b>`;
+        h += `<div class="ctx-sep"></div><span class="ctx-lsm">${passLabel}</span>`;
+        h += `<button class="ctx-btn" onclick="autoFixPaletteContrast()">${T('autoFix')}</button>`;
+        if (!isSimple) {
+          h += `<button class="ctx-btn${state.contrastMode === 'wcag' ? ' active' : ''}" onclick="setContrastMode('wcag')">${T('contrastMode').wcag}</button>`;
+          h += `<button class="ctx-btn${state.contrastMode === 'apca' ? ' active' : ''}" onclick="setContrastMode('apca')">${T('contrastMode').apca}</button>`;
+        }
       }
+
+      // Mode toggle lives at the far right of the context bar
+      h += `<div class="ctx-spacer"></div>`;
+      h += `<div id="mode-toggle" data-mode="${uiMode}" aria-label="Toggle interface mode">
+              <button class="mt-simple${uiMode === 'simple' ? ' mt-active' : ''}" onclick="setUIMode('simple')">${isSimple ? '✦ Simple' : 'Simple'}</button>
+              <button class="mt-dev${uiMode === 'dev' ? ' mt-active' : ''}" onclick="setUIMode('dev')">${!isSimple ? '✦ Dev' : 'Dev'}</button>
+            </div>`;
+
       cb.innerHTML = h;
-      // Re-bind custom picker after every innerHTML replacement
       _bindCtxPickers();
     }
 
@@ -646,6 +791,10 @@
 
       document.getElementById('wheel-strip').innerHTML = state.palette.map(c => `
         <div class="ws-sw" style="background:${c}" onclick="copyHex('${c}')"><span>${c.toUpperCase()}</span></div>`).join('');
+
+      // Update hint text
+      const hint = document.querySelector('.wheel-hint');
+      if (hint) hint.textContent = T('wheelHint');
 
       // ── Attach pointer events (only once per canvas mount) ──
       _bindWheelEvents(canvas, cx, cy, oR, iR);
@@ -806,9 +955,11 @@
         const dist = Math.hypot(mx, my);
         const saturation = Math.max(5, Math.min(100, ((dist - iR) / (oR - iR) - 0.18) / 0.78 * 100));
 
+        // New hue from current angle
+        const newHue = (((currentAngle + Math.PI / 2) / (Math.PI * 2)) * 360 + 360) % 360;
+
         if (state.harmony === 'Custom') {
-          // Independent drag: only move this point
-          const newHue = (((currentAngle + Math.PI / 2) / (Math.PI * 2)) * 360 + 360) % 360;
+          // Independent drag: move only this point freely in 2D
           const [,, origL] = _wheelDrag.startPaletteSnapshot[_wheelDrag.idx];
           const newColor = hslToHex(newHue, saturation, origL);
           state.palette = [...state.palette];
@@ -819,17 +970,20 @@
           }
           if (_wheelDrag.idx === 0) state.base = newColor;
         } else {
-          // Harmony drag: rotate entire group, preserving spacing
-          const draggedOrigHue = _wheelDrag.startPaletteSnapshot[_wheelDrag.idx][0];
-          const draggedOrigAngle = (draggedOrigHue / 360) * Math.PI * 2 - Math.PI / 2;
-          const delta = currentAngle - draggedOrigAngle;
-          const deltaHueDeg = (delta / (Math.PI * 2)) * 360;
+          // Harmony drag: rotate entire group preserving hue spacing,
+          // AND update every point's saturation by the same radial delta as the dragged point.
+          const draggedOrig = _wheelDrag.startPaletteSnapshot[_wheelDrag.idx]; // [h, s, l]
+          const draggedOrigAngle = (draggedOrig[0] / 360) * Math.PI * 2 - Math.PI / 2;
+          const hueDelta = ((currentAngle - draggedOrigAngle) / (Math.PI * 2)) * 360;
+          // Saturation delta: how much the dragged point's sat changed from its original
+          const satDelta = saturation - draggedOrig[1];
 
-          state.palette = _wheelDrag.startPaletteSnapshot.map(([h, s, l], i) => {
-            const newH = (h + deltaHueDeg + 360) % 360;
-            return hslToHex(newH, s, l);
+          state.palette = _wheelDrag.startPaletteSnapshot.map(([h, s, l]) => {
+            const newH = (h + hueDelta + 360) % 360;
+            const newS = Math.max(5, Math.min(100, s + satDelta));
+            return hslToHex(newH, newS, l);
           });
-          // Update base to reflect the rotation applied to index 0
+          // Update base to reflect index 0 after transformation
           state.base = state.palette[0];
         }
 
@@ -868,21 +1022,24 @@
     // ══ COLOR CARDS ══
     function renderCards() {
       const el = document.getElementById('cards-grid'), p = state.palette;
+      const isSimple = uiMode === 'simple';
       el.innerHTML = p.map(() => `<div class="shimmer-card" style="height:160px"></div>`).join('');
       setTimeout(() => {
         el.innerHTML = p.map((c, i) => {
           const [r, g, b] = hexToRgb(c), [hh, ss, ll] = hexToHsl(c), tc = textOn(c);
           const badge = i === 0 ? 'BASE' : `#${i + 1}`;
+          const strengthLabel = ss < 20 ? (isSimple ? 'Subtle' : 'Muted') : ss < 55 ? (isSimple ? 'Balanced' : 'Soft') : 'Vivid';
+          const subLines = isSimple ? '' : `
+          <div class="cc-sub">rgb(${r},${g},${b})</div>
+          <div class="cc-sub">hsl(${Math.round(hh)}°,${Math.round(ss)}%,${Math.round(ll)}%)</div>`;
           return `<div class="color-card${i === 0 ? ' color-card--base' : ''}" onclick="copyHex('${c}')">
         <div class="cc-sw" style="${swatchStyle(c)}"><div class="cc-badge" style="color:${tc}">${badge}</div></div>
         <div class="cc-body">
-          <div class="cc-hex">${c.toUpperCase()}</div>
-          <div class="cc-sub">rgb(${r},${g},${b})</div>
-          <div class="cc-sub">hsl(${Math.round(hh)}°,${Math.round(ss)}%,${Math.round(ll)}%)</div>
+          <div class="cc-hex">${c.toUpperCase()}</div>${subLines}
           <div class="cc-tags">
             <span class="cc-tag">${i === 0 ? 'Base' : nameColor(c)}</span>
             <span class="cc-tag">${ll < 30 ? 'Dark' : ll < 65 ? 'Mid' : 'Light'}</span>
-            <span class="cc-tag">${ss < 20 ? 'Muted' : ss < 55 ? 'Soft' : 'Vivid'}</span>
+            <span class="cc-tag">${strengthLabel}</span>
           </div>
         </div>
       </div>`;
@@ -1038,71 +1195,76 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
       const fixedBgs = ['#FFFFFF', '#000000', '#111111', '#F5F5F5', '#1A1A2E'];
       const bgLabels = { '#FFFFFF': 'White', '#000000': 'Black', '#111111': 'Near Black', '#F5F5F5': 'Off White', '#1A1A2E': 'Dark Navy' };
       const mode     = state.contrastMode;
+      const isSimple = uiMode === 'simple';
 
-      // For each palette color find ALL candidate backgrounds and rank them
+      // Update the section header text
+      const hdr = document.querySelector('#panel-contrast .sec-hdr');
+      if (hdr) hdr.textContent = T('contrastPanel');
+
       const cards = p.map(color => {
         const candidates = [
           ...fixedBgs.map(bg => ({ bg, label: bgLabels[bg] || bg })),
           ...p.filter(c => c !== color).map(bg => ({ bg, label: bg.toUpperCase() + ' (palette)' }))
         ];
-
         const ranked = candidates.map(({ bg, label }) => {
           const ratio = contrastValue(color, bg, mode);
           const grade = contrastGrade(color, bg, mode);
           return { bg, label, ratio, grade };
         }).sort((a, b) => {
-          // Sort by absolute ratio descending (APCA uses signed values)
           const aScore = mode === 'apca' ? Math.abs(a.ratio) : a.ratio;
           const bScore = mode === 'apca' ? Math.abs(b.ratio) : b.ratio;
           return bScore - aScore;
         });
-
         const best = ranked[0];
         return { color, ranked, best };
       });
 
+      // Helper: translate grade label
+      function gradeLabel(g) { return T('gradeLabels')[g] || g; }
+      function gradeClass(g) {
+        if (g === 'AAA') return 'g-aaa';
+        if (g === 'AA') return 'g-aa';
+        if (g === 'AA Lg') return 'g-aal';
+        return 'g-fail';
+      }
+
       document.getElementById('contrast-grid').innerHTML = cards.map(({ color, ranked, best }) => {
-        const bestRatioLabel = mode === 'apca'
-          ? `${Math.abs(best.ratio).toFixed(1)} Lc`
-          : `${best.ratio.toFixed(2)}:1`;
+        const bestRatioLabel = isSimple
+          ? (mode === 'apca' ? `${Math.abs(best.ratio).toFixed(0)} score` : `${best.ratio.toFixed(1)}:1`)
+          : (mode === 'apca' ? `${Math.abs(best.ratio).toFixed(1)} Lc` : `${best.ratio.toFixed(2)}:1`);
 
         const otherRows = ranked.slice(1).map(({ bg, label, ratio, grade }) => {
-          const ratioLabel = mode === 'apca'
-            ? `${Math.abs(ratio).toFixed(1)} Lc`
-            : `${ratio.toFixed(2)}:1`;
+          const ratioLabel = isSimple
+            ? (mode === 'apca' ? `${Math.abs(ratio).toFixed(0)}` : `${ratio.toFixed(1)}:1`)
+            : (mode === 'apca' ? `${Math.abs(ratio).toFixed(1)} Lc` : `${ratio.toFixed(2)}:1`);
+          const gl = gradeLabel(grade[0]);
           return `
             <div class="cont-row">
               <div class="cont-row-swatch" style="background:${bg};border:1px solid rgba(255,255,255,.1)"></div>
               <span class="cont-row-label">${label}</span>
               <span class="cont-row-ratio">${ratioLabel}</span>
-              <span class="cont-grade ${grade[1]}">${grade[0]}</span>
+              <span class="cont-grade ${gradeClass(grade[0])}">${gl}</span>
             </div>`;
         }).join('');
 
+        const bestGl = gradeLabel(best.grade[0]);
         return `
           <div class="cont-card">
-            <!-- Color identity -->
             <div class="cont-color-header">
               <div class="cont-color-dot" style="background:${color}"></div>
               <span class="cont-color-hex">${color.toUpperCase()}</span>
               <span class="cont-color-name">${nameColor(color)}</span>
             </div>
-
-            <!-- Best match hero -->
             <div class="cont-best" style="background:${best.bg};color:${color}">
-              <div class="cont-best-label">Best match</div>
+              <div class="cont-best-label">${isSimple ? 'Best background' : 'Best match'}</div>
               <div class="cont-best-preview">Aa Bb 123</div>
               <div class="cont-best-meta">
                 <span class="cont-best-bg-name">${best.label}</span>
-                <span class="cont-grade ${best.grade[1]}">${best.grade[0]}</span>
+                <span class="cont-grade ${gradeClass(best.grade[0])}">${bestGl}</span>
                 <span class="cont-best-ratio">${bestRatioLabel}</span>
               </div>
             </div>
-
-            <!-- All other pairings ranked -->
-            <div class="cont-rows">
-              ${otherRows}
-            </div>
+            <div class="cont-rows">${otherRows}</div>
           </div>`;
       }).join('');
     }
@@ -1160,14 +1322,28 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
     }
     function renderMobHarmony() {
       const el = document.getElementById('mob-harmony'); if (!el) return;
-      el.innerHTML = HARMONIES.map(h => `<button class="ctx-btn${state.harmony === h ? ' active' : ''}" onclick="setHarmony('${h}');renderMobHarmony()">${h}</button>`).join('');
+      el.innerHTML = HARMONIES.map(h => `<button class="ctx-btn${state.harmony === h ? ' active' : ''}" onclick="setHarmony('${h}');renderMobHarmony()">${TH(h)}</button>`).join('');
+      const mobHarmTitle = document.getElementById('mob-harmony-title');
+      if (mobHarmTitle) mobHarmTitle.textContent = uiMode === 'simple' ? 'Color Style' : 'Harmony';
     }
     function renderMobNav() {
       const tools = [['wheel', 'Color Wheel'], ['colors', 'Colors'], ['shades', 'Shades'], ['gradients', 'Gradients'], ['preview', 'Preview'], ['contrast', 'Contrast']];
       document.getElementById('mob-nav').innerHTML = tools.map(([t, l]) => `
     <button class="rp-xbtn" style="${currentTool === t ? 'background:rgba(124,106,255,.15);border-color:var(--accent);color:#fff' : ''}" onclick="switchTool('${t}');closeMob()">${l}</button>`).join('');
     }
-    function openMob() { document.getElementById('mob-drawer').classList.add('open'); document.getElementById('mob-overlay').classList.add('show'); renderMobNav(); renderMobHarmony(); }
+    function openMob() {
+      document.getElementById('mob-drawer').classList.add('open');
+      document.getElementById('mob-overlay').classList.add('show');
+      renderMobNav();
+      renderMobHarmony();
+      // Populate mode-aware export buttons
+      const mobExp = document.getElementById('mob-export-btns');
+      if (mobExp) {
+        mobExp.innerHTML = T('exports').map(({ fn, label }) =>
+          `<button class="rp-xbtn" onclick="${fn}();closeMob()">${label}</button>`
+        ).join('');
+      }
+    }
     function closeMob() { document.getElementById('mob-drawer').classList.remove('open'); document.getElementById('mob-overlay').classList.remove('show'); }
 
     // ══ COPY / EXPORT ══
@@ -1231,10 +1407,15 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
     // ══ INIT ══
     loadFromURL();
     if (!window.location.search) loadFromStorage();
+    // Restore UI mode preference
+    const savedMode = localStorage.getItem('kelyqo_uimode');
+    if (savedMode === 'dev' || savedMode === 'simple') uiMode = savedMode;
+    document.body.dataset.uiMode = uiMode;
     pushHist();
     // If restoring Custom mode, customColors is already set from storage; just generate from it
     state.palette = generate(state.base, state.count, state.harmony);
     render();
+    _renderModeToggle();
     switchTool('wheel');
     _initMobPicker();
     const onboardingOverlay = document.getElementById('onboarding-overlay');
