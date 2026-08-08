@@ -1,6 +1,6 @@
 // ══ STATE ══
     const HARMONIES = ['Monochromatic', 'Complementary', 'Analogous', 'Triadic', 'Split-Comp', 'Tetradic', 'Square', 'Custom'];
-    let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', colorBlindMode: 'none' };
+    let state = { base: '#AA3939', count: 5, harmony: 'Complementary', palette: [], contrastMode: 'wcag', customColors: null };
     let hist = [], histIdx = -1, currentTool = 'colors';
     const ONBOARDING_STORAGE_KEY = 'kelyqo_onboarded_v1';
     const ONBOARDING_TOTAL_STEPS = 5;
@@ -79,19 +79,8 @@
       renderContrast();
     }
 
-    function setColorBlindMode(mode) {
-      state.colorBlindMode = mode;
-      render();
-    }
-
-    function getColorBlindFilter() {
-      if (!state.colorBlindMode || state.colorBlindMode === 'none') return '';
-      return `url(#filter-${state.colorBlindMode})`;
-    }
-
     function swatchStyle(hex) {
-      const filter = getColorBlindFilter();
-      return `${filter ? `filter:${filter};-webkit-filter:${filter};` : ''}background:${hex};`;
+      return `background:${hex};`;
     }
 
     function hexToOklch(hex) {
@@ -140,37 +129,118 @@
     }
 
     // ══ GENERATE PALETTE ══
+    // Index 0 is always exactly state.base. All other colors use harmony offsets
+    // so that the base color is preserved unmodified at all times.
     function generate(base, count, mode) {
-      const [h, s, l] = hexToHsl(base); let c = [];
-      const lr = (i, n, mn, mx) => Math.max(mn, Math.min(mx, mn + (mx - mn) * (i / (n - 1 || 1))));
-      switch (mode) {
-        case 'Monochromatic': for (let i = 0; i < count; i++)c.push(hslToHex(h, Math.max(6, s - i * 4), lr(i, count, 8, 90))); break;
-        case 'Complementary': { const h2 = [h, h + 180]; for (let i = 0; i < count; i++)c.push(hslToHex(h2[i % 2], Math.max(18, s - i * 5), lr(i, count, 18, 82))); break; }
-        case 'Analogous': for (let i = 0; i < count; i++)c.push(hslToHex(h - 40 + (80 / (count - 1 || 1)) * i, s * .92, lr(i, count, 22, 80))); break;
-        case 'Triadic': { const b = [h, h + 120, h + 240]; for (let i = 0; i < count; i++)c.push(hslToHex(b[i % 3], s * .92, lr(i, count, 24, 80))); break; }
-        case 'Split-Comp': { const b = [h, h + 150, h + 210]; for (let i = 0; i < count; i++)c.push(hslToHex(b[i % 3], s * .9, lr(i, count, 24, 80))); break; }
-        case 'Tetradic': { const b = [h, h + 90, h + 180, h + 270]; for (let i = 0; i < count; i++)c.push(hslToHex(b[i % 4], s * .9, lr(i, count, 24, 80))); break; }
-        case 'Square': { const b = [h, h + 90, h + 180, h + 270]; for (let i = 0; i < count; i++)c.push(hslToHex(b[i % 4], s * .88, lr(i, count, 22, 82))); break; }
-        default: c = [base]; for (let i = 1; i < count; i++)c.push(hslToHex(Math.random() * 360, 42 + Math.random() * 44, 28 + Math.random() * 48));
+      const [h, s, l] = hexToHsl(base);
+      // Custom mode: use state.customColors if available and properly sized
+      if (mode === 'Custom') {
+        return generateCustom(base, count);
       }
-      return c.slice(0, count);
+      let offsets = []; // additional hue offsets (besides base at 0)
+      switch (mode) {
+        case 'Complementary': offsets = [180]; break;
+        case 'Analogous':     offsets = [-40, -20, 20, 40, 60, 80, 100, 120, 140, 160]; break;
+        case 'Triadic':       offsets = [120, 240]; break;
+        case 'Split-Comp':    offsets = [150, 210]; break;
+        case 'Tetradic':      offsets = [90, 180, 270]; break;
+        case 'Square':        offsets = [90, 180, 270]; break;
+        case 'Monochromatic': offsets = []; break;
+        default:              offsets = [180]; break;
+      }
+      const colors = [base]; // index 0 = exact base
+      // Fill remaining slots cycling through offsets
+      for (let i = 1; i < count; i++) {
+        const oi = (i - 1) % (offsets.length || 1);
+        const hOff = offsets.length ? offsets[oi] : 0;
+        const newH = (h + hOff + 360) % 360;
+        // Vary lightness slightly so similar hues still distinguish themselves
+        const lStep = offsets.length > 0
+          ? l + (i % 2 === 0 ? 8 : -8) * Math.ceil(i / (offsets.length * 2 || 1))
+          : 8 + 85 * (i / (count - 1 || 1));
+        const clampedL = Math.max(15, Math.min(85, lStep));
+        const sAdj = mode === 'Monochromatic' ? Math.max(8, s - i * 4) : Math.max(20, s * 0.9);
+        colors.push(hslToHex(newH, sAdj, clampedL));
+      }
+      return colors.slice(0, count);
+    }
+
+    // ── Custom palette helpers ──
+    function generateCustom(base, count) {
+      // If we already have a custom palette with the right count, just ensure index 0 = base
+      if (state.customColors && state.customColors.length > 0) {
+        const existing = [...state.customColors];
+        existing[0] = base; // always keep base exact
+        // Grow: add random colors
+        while (existing.length < count) {
+          existing.push(hslToHex(Math.random() * 360, 42 + Math.random() * 44, 28 + Math.random() * 48));
+        }
+        // Shrink: remove from the end (never remove base)
+        state.customColors = existing.slice(0, count);
+        return [...state.customColors];
+      }
+      // Fresh custom palette: base + random
+      const colors = [base];
+      for (let i = 1; i < count; i++) {
+        colors.push(hslToHex(Math.random() * 360, 42 + Math.random() * 44, 28 + Math.random() * 48));
+      }
+      state.customColors = [...colors];
+      return colors;
+    }
+
+    function seedCustomColors() {
+      // Seed custom colors from current palette (called when first switching to Custom)
+      state.customColors = [...state.palette];
+    }
+
+    function randomizeCustomColors() {
+      const base = state.base;
+      const colors = [base];
+      for (let i = 1; i < state.count; i++) {
+        colors.push(hslToHex(Math.random() * 360, 42 + Math.random() * 44, 28 + Math.random() * 48));
+      }
+      state.customColors = colors;
     }
 
     function applyState(s) { state = { ...s }; state.palette = generate(s.base, s.count, s.harmony); render(); }
-    function pushHist() { const snap = { base: state.base, count: state.count, harmony: state.harmony }; hist = hist.slice(0, histIdx + 1); hist.push(snap); histIdx = hist.length - 1; }
-    function undo() { if (histIdx > 0) { histIdx--; applyState(hist[histIdx]); } }
-    function redo() { if (histIdx < hist.length - 1) { histIdx++; applyState(hist[histIdx]); } }
-    function setBase(hex) { if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return; pushHist(); state.base = hex; state.palette = generate(state.base, state.count, state.harmony); render(); }
+    function pushHist() { const snap = { base: state.base, count: state.count, harmony: state.harmony, customColors: state.customColors ? [...state.customColors] : null }; hist = hist.slice(0, histIdx + 1); hist.push(snap); histIdx = hist.length - 1; }
+    function undo() { if (histIdx > 0) { histIdx--; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; state.palette = generate(s.base, s.count, s.harmony); render(); } }
+    function redo() { if (histIdx < hist.length - 1) { histIdx++; const s = hist[histIdx]; state.base = s.base; state.count = s.count; state.harmony = s.harmony; state.customColors = s.customColors ? [...s.customColors] : null; state.palette = generate(s.base, s.count, s.harmony); render(); } }
+    function setBase(hex) { if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return; pushHist(); state.base = hex; if (state.harmony === 'Custom' && state.customColors) state.customColors[0] = hex; state.palette = generate(state.base, state.count, state.harmony); render(); }
     function setCount(n) { pushHist(); state.count = n; state.palette = generate(state.base, state.count, state.harmony); render(); }
-    function setHarmony(h) { pushHist(); state.harmony = h; state.palette = generate(state.base, state.count, state.harmony); render(); }
+    function setHarmony(h) {
+      pushHist();
+      const wasCustom = state.harmony === 'Custom';
+      const isCustom = h === 'Custom';
+      state.harmony = h;
+      if (isCustom && !wasCustom) {
+        // Seed custom from current palette so transition feels smooth
+        seedCustomColors();
+      } else if (!isCustom) {
+        // Leaving custom — clear stored custom colors
+        state.customColors = null;
+      }
+      state.palette = generate(state.base, state.count, state.harmony);
+      render();
+    }
     function stepCount(d) { setCount(Math.max(2, Math.min(12, state.count + d))); }
     function randomize() {
       pushHist();
       const h = Math.random() * 360, s = 45 + Math.random() * 45, l = 30 + Math.random() * 35;
       state.base = hslToHex(h, s, l);
-      state.harmony = HARMONIES[Math.floor(Math.random() * 7)];
+      const newHarmony = HARMONIES[Math.floor(Math.random() * 7)]; // exclude Custom
+      state.harmony = newHarmony;
+      state.customColors = null;
       state.count = [3, 4, 5, 6][Math.floor(Math.random() * 4)];
-      state.palette = generate(state.base, state.count, state.harmony); render();
+      state.palette = generate(state.base, state.count, state.harmony);
+      render();
+    }
+    function randomizeCustom() {
+      // Only used when already in Custom mode — replaces all non-base colors
+      pushHist();
+      randomizeCustomColors();
+      state.palette = generate(state.base, state.count, state.harmony);
+      render();
     }
     function onHexInput(v) { if (/^#[0-9A-Fa-f]{6}$/.test(v)) setBase(v); }
 
@@ -351,7 +421,7 @@
 
     // ══ STORAGE & URL SYNC ══
     function persistState() {
-      const cacheState = { base: state.base, count: state.count, harmony: state.harmony, contrastMode: state.contrastMode, colorBlindMode: state.colorBlindMode };
+      const cacheState = { base: state.base, count: state.count, harmony: state.harmony, contrastMode: state.contrastMode, customColors: state.customColors ? [...state.customColors] : null };
       localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(cacheState));
     }
 
@@ -364,7 +434,7 @@
           state.count = cached_state.count || state.count;
           state.harmony = cached_state.harmony || state.harmony;
           state.contrastMode = cached_state.contrastMode || state.contrastMode;
-          state.colorBlindMode = cached_state.colorBlindMode || state.colorBlindMode;
+          state.customColors = Array.isArray(cached_state.customColors) ? [...cached_state.customColors] : null;
         }
       } catch (e) { }
     }
@@ -375,7 +445,6 @@
       params.set('harmony', state.harmony);
       params.set('count', state.count);
       if (state.contrastMode !== 'wcag') params.set('contrast', state.contrastMode);
-      if (state.colorBlindMode !== 'none') params.set('vision', state.colorBlindMode);
       window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
     }
 
@@ -394,13 +463,13 @@
         if (c >= 2 && c <= 12) state.count = c;
       }
       if (contrast && ['wcag', 'apca'].includes(contrast)) state.contrastMode = contrast;
-      if (vision && ['none', 'protanopia', 'deuteranopia', 'tritanopia'].includes(vision)) state.colorBlindMode = vision;
     }
 
     // ══ RENDER ══
     function render() {
       renderPalBar(); renderRight(); renderCtxBar();
-      renderWheel(); renderCards(); renderShades(); renderGradients();
+      if (currentTool === 'wheel') renderWheel();
+      renderCards(); renderShades(); renderGradients();
       renderPreview(); renderContrast();
       syncMob();
       persistState();
@@ -432,8 +501,10 @@
       h += `<span class="ctx-lsm">Colors:</span>`;
       h += `<div class="ctx-stepper"><button onclick="stepCount(-1)">−</button><span>${state.count}</span><button onclick="stepCount(1)">+</button></div>`;
       h += `<div class="ctx-sep"></div>`;
-      h += `<span class="ctx-lsm">Vision</span><select class="ctx-select" onchange="setColorBlindMode(this.value)"><option value="none" ${state.colorBlindMode === 'none' ? 'selected' : ''}>Standard</option><option value="protanopia" ${state.colorBlindMode === 'protanopia' ? 'selected' : ''}>Protanopia</option><option value="deuteranopia" ${state.colorBlindMode === 'deuteranopia' ? 'selected' : ''}>Deuteranopia</option><option value="tritanopia" ${state.colorBlindMode === 'tritanopia' ? 'selected' : ''}>Tritanopia</option></select>`;
       HARMONIES.forEach(m => { h += `<button class="ctx-btn${state.harmony === m ? ' active' : ''}" onclick="setHarmony('${m}')">${m}</button>`; });
+      if (state.harmony === 'Custom') {
+        h += `<div class="ctx-sep"></div><button class="ctx-btn" onclick="randomizeCustom()">Randomize</button>`;
+      }
       if (currentTool === 'gradients') h += `<div class="ctx-sep"></div><button class="ctx-btn" onclick="copyAllGrads()">Copy All CSS</button>`;
       if (currentTool === 'contrast') {
         const pass = countPassingColors(state.palette, state.contrastMode);
@@ -504,45 +575,294 @@
       document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
       const panel = document.getElementById('panel-' + tool); if (panel) panel.classList.add('active');
       renderCtxBar();
-      if (tool === 'wheel') renderWheel();
+      if (tool === 'wheel') {
+        // Clear bound flag so events re-attach if canvas was recreated
+        const canvas = document.getElementById('wheel-canvas');
+        if (canvas) canvas._wheelBound = false;
+        renderWheel();
+      }
     }
 
-    // ══ COLOR WHEEL (Paletton-style) ══
+    // ══ COLOR WHEEL — interactive drag controller ══
+    // The wheel uses angle for hue, distance from center for saturation.
+    // Lightness is controlled separately (by the existing lightness range per color).
+    // In harmony modes: dragging ANY point rotates the whole group, preserving spacing.
+    // In Custom mode: each point is independent.
+
+    let _wheelDrag = null; // active drag state
+
+    function _wheelPointRadius(iR, oR, saturation) {
+      // Map saturation 0-100 to radial position between inner and outer radius
+      return iR + (oR - iR) * (0.18 + (saturation / 100) * 0.78);
+    }
+
+    function _wheelHitTest(canvas, clientX, clientY, iR, oR) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const mx = (clientX - rect.left) * scaleX;
+      const my = (clientY - rect.top) * scaleY;
+
+      let closest = -1, closestDist = Infinity;
+      state.palette.forEach((c, idx) => {
+        const [h, s] = hexToHsl(c);
+        const rad = _wheelPointRadius(iR, oR, s);
+        const angle = (h / 360) * Math.PI * 2 - Math.PI / 2;
+        const px = cx + rad * Math.cos(angle);
+        const py = cy + rad * Math.sin(angle);
+        const dist = Math.hypot(mx - px, my - py);
+        if (dist < 18 && dist < closestDist) { closest = idx; closestDist = dist; }
+      });
+      return closest;
+    }
+
     function renderWheel() {
-      const canvas = document.getElementById('wheel-canvas'); if (!canvas) return;
-      const ctx = canvas.getContext('2d'), W = canvas.width, H = canvas.height, cx = W / 2, cy = H / 2;
-      const oR = W / 2 - 2, iR = oR * .36;
-      ctx.clearRect(0, 0, W, H);
+      const canvas = document.getElementById('wheel-canvas');
+      if (!canvas) return;
+
+      const W = canvas.width, H = canvas.height;
+      const cx = W / 2, cy = H / 2;
+      const oR = W / 2 - 4, iR = oR * 0.36;
+
+      // ── Draw wheel ──
+      _drawWheelBase(canvas, cx, cy, oR, iR);
+
+      // ── Draw harmony lines ──
+      _drawHarmonyLines(canvas, cx, cy, oR, iR);
+
+      // ── Draw drag handles ──
+      _drawWheelPoints(canvas, cx, cy, oR, iR);
+
+      // ── Side list & strip ──
+      document.getElementById('wheel-color-list').innerHTML = state.palette.map((c, i) => `
+        <div class="wci${i === 0 ? ' wci--base' : ''}" onclick="copyHex('${c}')">
+          <div class="wci-sw" style="background:${c}"></div>
+          <div>
+            <div class="wci-hex">${c.toUpperCase()}</div>
+            <div class="wci-name">${i === 0 ? '⬡ Base' : nameColor(c)}</div>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('wheel-strip').innerHTML = state.palette.map(c => `
+        <div class="ws-sw" style="background:${c}" onclick="copyHex('${c}')"><span>${c.toUpperCase()}</span></div>`).join('');
+
+      // ── Attach pointer events (only once per canvas mount) ──
+      _bindWheelEvents(canvas, cx, cy, oR, iR);
+    }
+
+    function _drawWheelBase(canvas, cx, cy, oR, iR) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const SEG = 72;
+
+      // Hue ring
       for (let i = 0; i < SEG; i++) {
-        const a0 = (i / SEG) * Math.PI * 2 - Math.PI / 2, a1 = ((i + 1) / SEG) * Math.PI * 2 - Math.PI / 2, hue = (i / SEG) * 360;
+        const a0 = (i / SEG) * Math.PI * 2 - Math.PI / 2;
+        const a1 = ((i + 1) / SEG) * Math.PI * 2 - Math.PI / 2;
+        const hue = (i / SEG) * 360;
         const g = ctx.createRadialGradient(cx, cy, iR, cx, cy, oR);
-        g.addColorStop(0, hslToHex(hue, 100, 62)); g.addColorStop(.5, hslToHex(hue, 100, 44)); g.addColorStop(1, hslToHex(hue, 90, 18));
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, oR, a0, a1); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+        g.addColorStop(0, hslToHex(hue, 100, 62));
+        g.addColorStop(0.5, hslToHex(hue, 100, 44));
+        g.addColorStop(1, hslToHex(hue, 90, 18));
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, oR, a0, a1); ctx.closePath();
+        ctx.fillStyle = g; ctx.fill();
       }
+
+      // Segment dividers
       for (let i = 0; i < SEG; i++) {
         const a = (i / SEG) * Math.PI * 2 - Math.PI / 2;
-        ctx.beginPath(); ctx.moveTo(cx + iR * Math.cos(a), cy + iR * Math.sin(a)); ctx.lineTo(cx + oR * Math.cos(a), cy + oR * Math.sin(a));
-        ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = .6; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + iR * Math.cos(a), cy + iR * Math.sin(a));
+        ctx.lineTo(cx + oR * Math.cos(a), cy + oR * Math.sin(a));
+        ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 0.5; ctx.stroke();
       }
-      const ig = ctx.createRadialGradient(cx - iR * .25, cy - iR * .3, 0, cx, cy, iR);
-      ig.addColorStop(0, 'rgba(255,255,255,.96)'); ig.addColorStop(.4, 'rgba(210,90,70,.72)'); ig.addColorStop(.72, 'rgba(110,15,15,.88)'); ig.addColorStop(1, 'rgba(20,2,2,.97)');
-      ctx.beginPath(); ctx.arc(cx, cy, iR, 0, Math.PI * 2); ctx.fillStyle = ig; ctx.fill();
-      state.palette.forEach((c, idx) => {
-        const [h, s] = hexToHsl(c), rad = iR + (oR - iR) * (.25 + s / 220), angle = (h / 360) * Math.PI * 2 - Math.PI / 2;
-        const x = cx + rad * Math.cos(angle), y = cy + rad * Math.sin(angle);
-        ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fill();
-        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.fillStyle = textOn(c); ctx.font = 'bold 8.5px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(idx + 1, x, y);
+
+      // Inner hub
+      const ig = ctx.createRadialGradient(cx - iR * 0.25, cy - iR * 0.3, 0, cx, cy, iR);
+      ig.addColorStop(0, 'rgba(255,255,255,.96)');
+      ig.addColorStop(0.4, 'rgba(210,90,70,.72)');
+      ig.addColorStop(0.72, 'rgba(110,15,15,.88)');
+      ig.addColorStop(1, 'rgba(20,2,2,.97)');
+      ctx.beginPath(); ctx.arc(cx, cy, iR, 0, Math.PI * 2);
+      ctx.fillStyle = ig; ctx.fill();
+    }
+
+    function _drawHarmonyLines(canvas, cx, cy, oR, iR) {
+      if (state.palette.length < 2) return;
+      const ctx = canvas.getContext('2d');
+      // Draw lines connecting harmony group points (only in non-custom modes)
+      const pts = state.palette.map(c => {
+        const [h, s] = hexToHsl(c);
+        const rad = _wheelPointRadius(iR, oR, s);
+        const angle = (h / 360) * Math.PI * 2 - Math.PI / 2;
+        return { x: cx + rad * Math.cos(angle), y: cy + rad * Math.sin(angle) };
       });
-      document.getElementById('wheel-color-list').innerHTML = state.palette.map((c, i) => `
-    <div class="wci" onclick="copyHex('${c}')">
-      <div class="wci-sw" style="${swatchStyle(c)}"></div>
-      <div><div class="wci-hex">${c.toUpperCase()}</div><div class="wci-name">${nameColor(c)}</div></div>
-    </div>`).join('');
-      document.getElementById('wheel-strip').innerHTML = state.palette.map(c => `
-    <div class="ws-sw" style="${swatchStyle(c)}" onclick="copyHex('${c}')"><span>${c.toUpperCase()}</span></div>`).join('');
+
+      ctx.save();
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = 1.2;
+      // Connect all points to base (index 0) only
+      for (let i = 1; i < pts.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function _drawWheelPoints(canvas, cx, cy, oR, iR) {
+      const ctx = canvas.getContext('2d');
+      const draggingIdx = _wheelDrag ? _wheelDrag.idx : -1;
+
+      state.palette.forEach((c, idx) => {
+        const [h, s] = hexToHsl(c);
+        const rad = _wheelPointRadius(iR, oR, s);
+        const angle = (h / 360) * Math.PI * 2 - Math.PI / 2;
+        const x = cx + rad * Math.cos(angle);
+        const y = cy + rad * Math.sin(angle);
+        const isBase = idx === 0;
+        const isDragging = idx === draggingIdx;
+        const r = isBase ? 13 : 10;
+
+        // Shadow
+        ctx.beginPath(); ctx.arc(x, y, r + 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill();
+
+        // Fill
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = c; ctx.fill();
+
+        // Outer ring — white for base, thinner for others
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.strokeStyle = isBase ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.8)';
+        ctx.lineWidth = isBase ? 2.5 : 1.5; ctx.stroke();
+
+        // Second inner ring for base to make it visually distinct
+        if (isBase) {
+          ctx.beginPath(); ctx.arc(x, y, r - 4, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1; ctx.stroke();
+        }
+
+        // Glow for dragging state
+        if (isDragging) {
+          ctx.beginPath(); ctx.arc(x, y, r + 5, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.stroke();
+        }
+
+        // Label
+        ctx.fillStyle = textOn(c);
+        ctx.font = `bold ${isBase ? 9 : 8}px Inter`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(isBase ? '★' : String(idx + 1), x, y);
+      });
+    }
+
+    function _bindWheelEvents(canvas, cx, cy, oR, iR) {
+      // Remove old listeners by replacing the canvas reference flag
+      if (canvas._wheelBound) return;
+      canvas._wheelBound = true;
+
+      canvas.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        const hitIdx = _wheelHitTest(canvas, e.clientX, e.clientY, iR, oR);
+        if (hitIdx === -1) return;
+
+        // Push history BEFORE drag begins (one undo entry per drag)
+        pushHist();
+
+        const [bh, bs, bl] = hexToHsl(state.palette[hitIdx]);
+        _wheelDrag = {
+          idx: hitIdx,
+          startAngle: (bh / 360) * Math.PI * 2,
+          startPaletteSnapshot: state.palette.map(c => hexToHsl(c))
+        };
+        canvas.setPointerCapture(e.pointerId);
+        canvas.style.cursor = 'grabbing';
+        _drawWheelPoints(canvas, cx, cy, oR, iR);
+      });
+
+      canvas.addEventListener('pointermove', function(e) {
+        if (!_wheelDrag) {
+          // Hover cursor feedback
+          const hov = _wheelHitTest(canvas, e.clientX, e.clientY, iR, oR);
+          canvas.style.cursor = hov !== -1 ? 'grab' : 'default';
+          return;
+        }
+        e.preventDefault();
+
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX - cx;
+        const my = (e.clientY - rect.top) * scaleY - cy;
+
+        // Current angle from center
+        const currentAngle = Math.atan2(my, mx);
+        // Current radius → saturation
+        const dist = Math.hypot(mx, my);
+        const saturation = Math.max(5, Math.min(100, ((dist - iR) / (oR - iR) - 0.18) / 0.78 * 100));
+
+        if (state.harmony === 'Custom') {
+          // Independent drag: only move this point
+          const newHue = (((currentAngle + Math.PI / 2) / (Math.PI * 2)) * 360 + 360) % 360;
+          const [,, origL] = _wheelDrag.startPaletteSnapshot[_wheelDrag.idx];
+          const newColor = hslToHex(newHue, saturation, origL);
+          state.palette = [...state.palette];
+          state.palette[_wheelDrag.idx] = newColor;
+          if (state.customColors) {
+            state.customColors = [...state.customColors];
+            state.customColors[_wheelDrag.idx] = newColor;
+          }
+          if (_wheelDrag.idx === 0) state.base = newColor;
+        } else {
+          // Harmony drag: rotate entire group, preserving spacing
+          const draggedOrigHue = _wheelDrag.startPaletteSnapshot[_wheelDrag.idx][0];
+          const draggedOrigAngle = (draggedOrigHue / 360) * Math.PI * 2 - Math.PI / 2;
+          const delta = currentAngle - draggedOrigAngle;
+          const deltaHueDeg = (delta / (Math.PI * 2)) * 360;
+
+          state.palette = _wheelDrag.startPaletteSnapshot.map(([h, s, l], i) => {
+            const newH = (h + deltaHueDeg + 360) % 360;
+            return hslToHex(newH, s, l);
+          });
+          // Update base to reflect the rotation applied to index 0
+          state.base = state.palette[0];
+        }
+
+        // Live redraw
+        _drawWheelBase(canvas, cx, cy, oR, iR);
+        _drawHarmonyLines(canvas, cx, cy, oR, iR);
+        _drawWheelPoints(canvas, cx, cy, oR, iR);
+
+        // Live sync all other UI without regenerating palette
+        _syncUIFromPalette();
+      });
+
+      canvas.addEventListener('pointerup', function(e) {
+        if (!_wheelDrag) return;
+        _wheelDrag = null;
+        canvas.style.cursor = 'default';
+        // Full render to sync everything, including persisting state
+        render();
+      });
+
+      canvas.addEventListener('pointercancel', function() {
+        if (!_wheelDrag) return;
+        _wheelDrag = null;
+        canvas.style.cursor = 'default';
+        render();
+      });
+    }
+
+    // Sync palette bar, right panel, and context bar without re-running generate()
+    function _syncUIFromPalette() {
+      renderPalBar();
+      renderRight();
+      renderCtxBar();
     }
 
     // ══ COLOR CARDS ══
@@ -552,14 +872,15 @@
       setTimeout(() => {
         el.innerHTML = p.map((c, i) => {
           const [r, g, b] = hexToRgb(c), [hh, ss, ll] = hexToHsl(c), tc = textOn(c);
-          return `<div class="color-card" onclick="copyHex('${c}')">
-        <div class="cc-sw" style="${swatchStyle(c)}"><div class="cc-badge" style="color:${tc}">${i === 0 ? 'BASE' : '#' + (i + 1)}</div></div>
+          const badge = i === 0 ? 'BASE' : `#${i + 1}`;
+          return `<div class="color-card${i === 0 ? ' color-card--base' : ''}" onclick="copyHex('${c}')">
+        <div class="cc-sw" style="${swatchStyle(c)}"><div class="cc-badge" style="color:${tc}">${badge}</div></div>
         <div class="cc-body">
           <div class="cc-hex">${c.toUpperCase()}</div>
           <div class="cc-sub">rgb(${r},${g},${b})</div>
           <div class="cc-sub">hsl(${Math.round(hh)}°,${Math.round(ss)}%,${Math.round(ll)}%)</div>
           <div class="cc-tags">
-            <span class="cc-tag">${nameColor(c)}</span>
+            <span class="cc-tag">${i === 0 ? 'Base' : nameColor(c)}</span>
             <span class="cc-tag">${ll < 30 ? 'Dark' : ll < 65 ? 'Mid' : 'Light'}</span>
             <span class="cc-tag">${ss < 20 ? 'Muted' : ss < 55 ? 'Soft' : 'Vivid'}</span>
           </div>
@@ -911,10 +1232,10 @@ document.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',e=>{
     loadFromURL();
     if (!window.location.search) loadFromStorage();
     pushHist();
+    // If restoring Custom mode, customColors is already set from storage; just generate from it
     state.palette = generate(state.base, state.count, state.harmony);
     render();
-    switchTool('colors');
-    // Bind mobile drawer picker (runs after DOM is painted)
+    switchTool('wheel');
     _initMobPicker();
     const onboardingOverlay = document.getElementById('onboarding-overlay');
     if (onboardingOverlay) {

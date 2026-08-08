@@ -256,11 +256,6 @@ export function copyInterpolationCSS() {
   UIRenderer.showToast('Ramp tokens copied');
 }
 
-export function setColorBlindMode(mode) {
-  StateManager.updateState({ colorBlindMode: mode });
-  render();
-}
-
 export function switchTool(toolName) {
   currentTool = toolName;
   document.querySelectorAll('.top-nav').forEach((el) => {
@@ -517,7 +512,6 @@ function exposeGlobalFunctions() {
   globalScope.stepCount = stepCount;
   globalScope.onHexInput = onHexInput;
   globalScope.setContrastMode = setContrastMode;
-  globalScope.setColorBlindMode = setColorBlindMode;
   globalScope.togglePaletteLock = togglePaletteLock;
   globalScope.beginFineTune = beginFineTune;
   globalScope.previewFineTune = previewFineTune;

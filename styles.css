@@ -765,6 +765,18 @@
       transition: transform .2s, box-shadow .2s, border-color .15s;
     }
 
+    .color-card--base {
+      border-color: rgba(255, 255, 255, .26);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .08);
+    }
+
+    .color-card--base .cc-badge {
+      background: rgba(255, 255, 255, .18);
+      backdrop-filter: blur(6px);
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
     .color-card:hover {
       transform: translateY(-3px);
       box-shadow: var(--shadow-card);
@@ -1239,13 +1251,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .wheel-hint {
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: .4px;
+      text-align: center;
     }
 
     #wheel-canvas {
       display: block;
-      cursor: crosshair;
+      cursor: default;
       border-radius: 50%;
       max-width: 100%;
+      touch-action: none; /* prevent scroll-jacking during drag */
     }
 
     #wheel-layout {
@@ -1289,6 +1311,16 @@
 
     .wci:hover {
       border-color: var(--accent);
+    }
+
+    /* Base color entry in wheel list */
+    .wci--base {
+      border-color: rgba(255, 255, 255, .22);
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .wci--base:hover {
+      border-color: rgba(255, 255, 255, .5);
     }
 
     .wci-sw {
@@ -1745,7 +1777,6 @@
 
     .ob-btn-secondary {
       color: var(--text2);
-      
       background: rgba(255, 255, 255, .04);
       border-color: rgba(255, 255, 255, .12);
     }

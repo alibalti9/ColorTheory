@@ -8,7 +8,6 @@ export function saveState(state) {
       harmony: state.harmony,
       colorSpace: state.colorSpace,
       contrastMode: state.contrastMode,
-      colorblindMode: state.colorblindMode,
       lockedSlots: state.lockedSlots,
       lockedColors: state.lockedColors,
       currentTool: state.currentTool,

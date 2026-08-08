@@ -7,15 +7,8 @@ import { getContrastValue, getContrastGrade, countAccessibleColors } from './con
 import { formatRampAsCss, generateInterpolationRamp } from './paletteInterpolation.js';
 import { getColorTemperature, getSemanticRoleSuggestions } from './palette-utils.js';
 
-export function getColorBlindFilterCSS() {
-  const state = getState();
-  if (!state.colorBlindMode || state.colorBlindMode === 'none') return '';
-  return `url(#filter-${state.colorBlindMode})`;
-}
-
 export function getSwatchStyle(hexColor) {
-  const filter = getColorBlindFilterCSS();
-  return `${filter ? `filter:${filter};-webkit-filter:${filter};` : ''}background:${hexColor};`;
+  return `background:${hexColor};`;
 }
 
 export function renderPaletteBar() {
@@ -75,15 +68,6 @@ export function renderContextBar(harmonyModes, currentTool) {
     html += `<button class="ctx-btn" onclick="copyInterpolationCSS()">Copy tokens</button>`;
     html += `<button class="ctx-btn active" onclick="applyInterpolationPalette()">Use ramp</button>`;
   }
-  html += `<div class="ctx-sep"></div>`;
-  html += `<span class="ctx-lsm">Vision</span>`;
-  html += `<select class="ctx-select" onchange="setColorBlindMode(this.value)">
-    <option value="none" ${state.colorBlindMode === 'none' ? 'selected' : ''}>Standard</option>
-    <option value="protanopia" ${state.colorBlindMode === 'protanopia' ? 'selected' : ''}>Protanopia</option>
-    <option value="deuteranopia" ${state.colorBlindMode === 'deuteranopia' ? 'selected' : ''}>Deuteranopia</option>
-    <option value="tritanopia" ${state.colorBlindMode === 'tritanopia' ? 'selected' : ''}>Tritanopia</option>
-  </select>`;
-
   harmonyModes.forEach((mode) => {
     const isActive = state.harmony === mode ? ' active' : '';
     html += `<button class="ctx-btn${isActive}" onclick="setHarmony('${mode}')">${mode}</button>`;
@@ -230,12 +214,11 @@ export function renderContrastGrid() {
       const contrastVal = getContrastValue(foreground, background, state.contrastMode);
       const gradeInfo = getContrastGrade(foreground, background, state.contrastMode);
       const valueLabel = state.contrastMode === 'apca' ? `${contrastVal.toFixed(1)} Lc` : `${contrastVal.toFixed(2)}:1`;
-      const filterStyle = getColorBlindFilterCSS();
       const canFix = state.contrastMode === 'wcag' && contrastVal < 4.5;
 
       return `
         <div class="cont-card">
-          <div class="cont-component-preview" style="background:${background};color:${foreground};${filterStyle ? `filter:${filterStyle};-webkit-filter:${filterStyle};` : ''}">
+          <div class="cont-component-preview" style="background:${background};color:${foreground};">
             <button class="cont-preview-button" type="button">Save changes</button>
             <div class="cont-preview-input"><span>✦</span><span>Search projects</span></div>
             <span class="cont-preview-badge">Active</span>

@@ -12,7 +12,6 @@ export const initialState = {
   harmony: 'Complementary',
   palette: [],
   contrastMode: 'wcag',
-  colorBlindMode: 'none',
   lockedSlots: [],
   lockedColors: [],
   interpolationStart: '#FF6B6B',
@@ -113,7 +112,6 @@ export function persistStateToLocalStorage() {
     count: currentState.count,
     harmony: currentState.harmony,
     contrastMode: currentState.contrastMode,
-    colorBlindMode: currentState.colorBlindMode,
     lockedSlots: currentState.lockedSlots,
     lockedColors: currentState.lockedColors,
     interpolationStart: currentState.interpolationStart,
@@ -132,7 +130,6 @@ export function loadStateFromLocalStorage() {
       currentState.count = cachedState.count || currentState.count;
       currentState.harmony = cachedState.harmony || currentState.harmony;
       currentState.contrastMode = cachedState.contrastMode || currentState.contrastMode;
-      currentState.colorBlindMode = cachedState.colorBlindMode || currentState.colorBlindMode;
       currentState.lockedSlots = cachedState.lockedSlots || currentState.lockedSlots;
       currentState.lockedColors = cachedState.lockedColors || currentState.lockedColors;
       currentState.interpolationStart = cachedState.interpolationStart || currentState.interpolationStart;
@@ -157,9 +154,6 @@ export function syncStateToURL() {
 
   if (currentState.contrastMode !== 'wcag') {
     params.set('contrast', currentState.contrastMode);
-  }
-  if (currentState.colorBlindMode !== 'none') {
-    params.set('vision', currentState.colorBlindMode);
   }
 
   window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
@@ -189,11 +183,6 @@ export function loadStateFromURL() {
   const contrastParam = params.get('contrast');
   if (contrastParam && ['wcag', 'apca'].includes(contrastParam)) {
     currentState.contrastMode = contrastParam;
-  }
-
-  const visionParam = params.get('vision');
-  if (visionParam && ['none', 'protanopia', 'deuteranopia', 'tritanopia'].includes(visionParam)) {
-    currentState.colorBlindMode = visionParam;
   }
 }
 

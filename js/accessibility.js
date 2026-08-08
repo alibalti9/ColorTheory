@@ -70,12 +70,4 @@ export function gradeContrast(foreground, background, mode = 'wcag') {
   return { value: ratio, grade: wcagGrade(ratio), unit: ':1' };
 }
 
-/** SVG filter IDs for color vision deficiency simulation */
-export const COLORBLIND_FILTERS = {
-  none: '',
-  protanopia: 'url(#filter-protanopia)',
-  deuteranopia: 'url(#filter-deuteranopia)',
-  tritanopia: 'url(#filter-tritanopia)',
-};
 
-export const COLORBLIND_MODES = ['none', 'protanopia', 'deuteranopia', 'tritanopia'];
