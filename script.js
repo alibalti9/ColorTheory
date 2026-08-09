@@ -416,7 +416,7 @@
           <div class="ob-step-icon">🎨</div>
           <div class="ob-kicker">Step 1 of ${ONBOARDING_TOTAL_STEPS}</div>
           <h2 class="ob-title" id="ob-title">Build a palette in a few clicks</h2>
-          <p class="ob-copy">kelyqo starts from one base color, generates a matching palette, and lets you preview or export the result without leaving the page.</p>
+          <p class="ob-copy">Kelyqo starts from one base color, generates a matching palette, and lets you preview or export the result without leaving the page.</p>
           <div class="ob-card-list">
             <div class="ob-card-item"><i>🖍️</i><div><strong>Pick a starting color</strong><span>Use the base swatch or type a hex code to define the palette direction.</span></div></div>
             <div class="ob-card-item"><i>🔮</i><div><strong>Choose a harmony</strong><span>Switch between calm, bold, or playful color relationships from the context bar.</span></div></div>
@@ -1234,7 +1234,7 @@ footer{padding:26px 48px;border-top:1px solid rgba(255,255,255,.06);text-align:c
   <div class="feat"><div class="feat-ico">♿</div><h3>Accessible by Default</h3><p>WCAG 2.1 and APCA contrast checking built in so every palette ships accessibility-ready.</p></div>
 </div>
 <div id="stats" class="stats">
-  <div class="stat"><h2>10K+</h2><p>Designers using kelyqo</p></div>
+  <div class="stat"><h2>10K+</h2><p>Designers using Kelyqo</p></div>
   <div class="stat"><h2>50+</h2><p>Color harmony modes</p></div>
   <div class="stat"><h2>99%</h2><p>Customer satisfaction</p></div>
 </div>
@@ -1246,7 +1246,7 @@ footer{padding:26px 48px;border-top:1px solid rgba(255,255,255,.06);text-align:c
     <button class="email-btn" onclick="subEmail()">Get Early Access</button>
   </div>
 </div>
-<footer>© 2025 kelyqo · Built with your palette</footer>
+<footer>© 2025 Kelyqo · Built with your palette</footer>
 <div id="toast-msg"></div>
 <script>
 function showT(msg){const t=document.getElementById('toast-msg');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}

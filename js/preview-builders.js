@@ -48,7 +48,7 @@ footer{padding:26px 48px 36px;display:flex;justify-content:space-between;opacity
 <section id="work" class="section"><div class="sec-lbl">Selected work</div><div class="w-grid">${p.slice(0,4).map((c,i)=>{const pr=[['Brand Identity','Visual design and strategy for a premium fintech launch.'],['Mobile App','End-to-end UX and polished mobile flows.'],['Web Platform','Design systems and frontend architecture.'],['Motion Direction','Immersive launch visuals and narrative scenes.']];const em=['🎨','📱','🌐','🎬'];return `<div class="w-card" onclick="showT('Opening ${pr[i][0]}...')"><div class="w-img" style="background:linear-gradient(135deg,${c},${p[(i+1)%p.length]})"><span class="w-pill">Case study</span><span>${em[i]}</span></div><div class="w-meta"><h3>${pr[i][0]}</h3><p>${pr[i][1]}</p><span>Open project →</span></div></div>`;}).join('')}</div></section>
 <section id="skills" class="skills-sec"><div class="skill-shell"><div class="sec-lbl">Skills and tools</div><div class="chips">${['Figma','React','TypeScript','Tailwind CSS','Motion Design','Three.js','Node.js','Framer','Webflow','GSAP'].map((s,i)=>`<div class="chip" style="color:${p[i%p.length]};border-color:${p[i%p.length]}44;background:${p[i%p.length]}12" onclick="showT('${s} selected')">${s}</div>`).join('')}</div></div></section>
 <section id="contact" class="contact"><div class="contact-shell"><div class="contact-copy"><div class="sec-lbl">Get in touch</div><h2>Let’s build something clear, bold, and memorable.</h2><p>Share your timeline, goals, and the kind of product experience you want to create. I’ll turn that into a thoughtful design and frontend plan.</p><div class="contact-list"><div class="contact-item">Email replies within one working day</div><div class="contact-item">Available for product design, design systems, and frontend direction</div><div class="contact-item">Remote-friendly collaboration across global teams</div></div></div><div class="contact-card"><div class="form-row"><label>Name</label><input class="inp" id="f-name" placeholder="Your name"></div><div class="form-row"><label>Email</label><input class="inp" id="f-email" type="email" placeholder="you@company.com"></div><div class="form-row"><label>Project</label><textarea class="inp" id="f-msg" placeholder="Tell me about your project, timeline, and goals..."></textarea></div><button class="send-btn" onclick="submitForm()">Send message</button></div></div></section>
-<footer><span>© 2025 Alex Design</span><span>Crafted with kelyqo previews</span></footer>
+<footer><span>© 2025 Alex Design</span><span>Crafted with Kelyqo previews</span></footer>
 <div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()"><div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><h3>Download CV</h3><p>Grab the latest resume with product work, system design examples, and recent client outcomes.</p><div class="modal-btns"><button class="mbtn mbtn-s" onclick="closeModal()">Cancel</button><button class="mbtn mbtn-p" onclick="closeModal();showT('CV download started')">Download PDF</button></div></div></div><div id="toast-msg"></div>
 <script>
 function showT(msg){const t=document.getElementById('toast-msg');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -118,7 +118,7 @@ footer{background:#111;color:#777;padding:28px 48px;display:flex;justify-content
 <div class="hero">
   <div>
     <h1>New Season,<br>New Colors</h1>
-    <p>Discover our kelyqo-inspired collection, crafted for designers and creators.</p>
+    <p>Discover our Kelyqo-inspired collection, crafted for designers and creators.</p>
     <button class="shop-btn" onclick="document.getElementById('prods').scrollIntoView({behavior:'smooth'})">Shop Now →</button>
   </div>
   <div class="hero-img">🎁</div>
@@ -143,7 +143,7 @@ footer{background:#111;color:#777;padding:28px 48px;display:flex;justify-content
   </div>
 </div>
 <div class="banner"><h2>Summer Sale — 40% Off</h2><p>Limited time on all palette-inspired products. Use code KELYQO40.</p><button class="shop-btn" onclick="showT('✓ Code KELYQO40 copied!')">Copy Code</button></div>
-<footer><span>© 2025 Shop · kelyqo</span><span>Returns · Privacy · Terms</span></footer>
+<footer><span>© 2025 Shop · Kelyqo</span><span>Returns · Privacy · Terms</span></footer>
 <div class="overlay" id="overlay" onclick="closeCart()"></div>
 <div class="cart-drawer" id="cart-drawer">
   <div class="cart-hdr"><h3>Your Cart</h3><button class="cart-x" onclick="closeCart()">✕</button></div>
@@ -433,7 +433,7 @@ aside{width:200px;border-right:1px solid rgba(255,255,255,.07);padding:16px 10px
     <div style="text-align:center;padding:8px 0 16px">
       <div style="font-size:40px;margin-bottom:14px">🎉</div>
       <h3 style="margin-bottom:8px">Palette Applied!</h3>
-      <p>Your kelyqo palette has been successfully applied to this component library.</p>
+      <p>Your Kelyqo palette has been successfully applied to this component library.</p>
     </div>
     <div class="modal-btns" style="justify-content:center">
       <button class="btn btn-primary" onclick="closeModal('modal-alert');showT('✓ Great!')">Awesome</button>
